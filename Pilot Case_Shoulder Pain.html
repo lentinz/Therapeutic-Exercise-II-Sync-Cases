@@ -92,10 +92,26 @@
   .cert-field-label { font-weight: 600; font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
   #groupNameInputSummary { font-size: 15px; padding: 8px 10px; width: 320px; }
   @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     .sidebar, .btn, #printBar { display: none !important; }
     .app { display: block; }
     .main { padding: 10px; max-width: 100%; }
+    .panel { break-inside: avoid; }
+    .cert-header { break-inside: avoid; }
   }
+  .cert-header {
+    background: var(--ink);
+    color: #fff;
+    padding: 28px 32px;
+    margin-bottom: 26px;
+  }
+  .cert-header .cert-eyebrow { color: #9FD3E0; font-weight: 600; font-size: 12px; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .cert-header h1 { font-family: 'Source Serif 4', serif; font-size: 26px; font-weight: 600; margin: 0 0 14px 0; }
+  .cert-header .cert-meta-row { display: flex; gap: 40px; flex-wrap: wrap; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.25); padding-top: 14px; }
+  .cert-header .cert-meta-item { }
+  .cert-header .cert-meta-label { font-size: 11px; color: #B8C4D6; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+  .cert-header .cert-meta-value { font-size: 15px; font-weight: 600; }
+  #certGroupNameLive { border-bottom: 1px dashed rgba(255,255,255,0.5); padding-bottom: 2px; }
 </style>
 </head>
 <body>
@@ -611,12 +627,26 @@ function tierFeedbackBlock(label, picked, items) {
 function renderSummary() {
   const priorities = state.topPriorities || [];
   const idealMatch = priorities.map((id, i) => IDEAL_TOP_IMPAIRMENTS[i] === id);
+  const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   return `
-    <div class="eyebrow">CASE COMPLETE</div>
-    <h1 class="stage-title">Case 1 Summary</h1>
+    <div class="cert-header">
+      <div class="cert-eyebrow">CASE COMPLETION RECORD</div>
+      <h1>Case 1: Right Shoulder Pain</h1>
+      <div class="cert-meta-row">
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Group Members</div>
+          <div class="cert-meta-value" id="certGroupNameLive">${state.groupName || '\u2014'}</div>
+        </div>
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Date Completed</div>
+          <div class="cert-meta-value">${today}</div>
+        </div>
+      </div>
+    </div>
+
     <div class="cert-field">
-      <div class="cert-field-label">Group members</div>
-      <input type="text" id="groupNameInputSummary" value="${state.groupName}" placeholder="Enter group member names" oninput="state.groupName = this.value; document.getElementById('certGroupDisplay').textContent = this.value;">
+      <div class="cert-field-label">Edit group members (updates the record above)</div>
+      <input type="text" id="groupNameInputSummary" value="${state.groupName}" placeholder="Enter group member names" oninput="state.groupName = this.value; document.getElementById('certGroupNameLive').textContent = this.value || '\u2014';">
     </div>
 
     <h1 class="stage-title" style="font-size:19px;">Subjective &amp; Objective — Choice Quality</h1>
@@ -655,7 +685,6 @@ function renderSummary() {
       <button class="btn" onclick="window.print()">Download / Print Certificate</button>
       <button class="btn secondary" onclick="location.reload()">Restart Case</button>
     </div>
-    <div style="display:none;"><span id="certGroupDisplay">${state.groupName}</span></div>
   `;
 }
 
