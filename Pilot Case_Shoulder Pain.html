@@ -8,9 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #FAFAF7; --paper-dim: #F2EFE8; --ink: #1C2321; --ink-soft: #5B6560;
-    --teal: #28584F; --teal-dim: #E4ECE9; --ochre: #9C6B2E; --ochre-dim: #F3EADA;
-    --forest: #3D6B4A; --forest-dim: #E5EEE6; --line: #D9D4C7; --line-strong: #B9B2A0;
+    --paper: #FAFAF7; --paper-dim: #EEF2F3; --ink: #14213D; --ink-soft: #57657A;
+    --teal: #1E7F97; --teal-dim: #E1EEF1; --ochre: #9C6B2E; --ochre-dim: #F3EADA;
+    --forest: #27AE60; --forest-dim: #E1F7E9; --line: #DAE1E6; --line-strong: #AEB9C4;
     --yellow: #B79328; --yellow-dim: #FBF3DD; --red: #B0402E; --red-dim: #F7E6E1;
   }
   * { box-sizing: border-box; }
@@ -90,7 +90,7 @@
   .slot-note { font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 12px 0; }
   .cert-field { margin-bottom: 20px; }
   .cert-field-label { font-weight: 600; font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
-  #groupNameInput { font-size: 15px; padding: 8px 10px; width: 260px; }
+  #groupNameInputSummary { font-size: 15px; padding: 8px 10px; width: 320px; }
   @media print {
     .sidebar, .btn, #printBar { display: none !important; }
     .app { display: block; }
@@ -118,12 +118,13 @@ const state = {
   screeningPicked: [], differentialPicked: [], impairmentSearchPicked: [],
   impairmentOrder: [], topPriorities: [],
   exerciseSlots: {},   // { impId: [ {type:'menu', idx} | {type:'other', text} ] }
+  otherShown: {},       // { impId: true } — write-in input row is open but not yet committed to a slot
   dosage: {},           // { impId_slotIdx: {sets,reps,loadtype,loadval,rationale} }
   otherInterventions: ""
 };
 
 const TIER_DOT = { green: '<span class="tier-dot tier-green"></span>', yellow: '<span class="tier-dot tier-yellow"></span>', red: '<span class="tier-dot tier-red"></span>' };
-const TIER_LABEL = { green: 'Green — strong choice', yellow: 'Yellow — acceptable, not optimal', red: 'Red — not well advised here' };
+const TIER_LABEL = { green: 'Green — strong choice', yellow: 'Yellow — acceptable choice', red: 'Red — not advised' };
 
 const SUBJ_QUESTIONS = [
   { id:'s1', cat:'Onset', q:'How did the pain begin?', a:'Gradual onset over 4 months, no single traumatic event. Started after increasing tennis play from once to three times weekly.', tier:'green' },
@@ -183,40 +184,40 @@ const IMPAIRMENTS = {
 // i4-i6 (real but lower priority this visit) skew yellow/red as a natural consequence of over-prioritizing them.
 const EXERCISES = {
   i1: [
-    { name:'Sidelying external rotation with light dumbbell', detail:'Isolates posterior cuff to support the rotator cuff force couple; low load, controlled tempo.', tier:'green' },
-    { name:'Prone horizontal abduction ("T" raises)', detail:'Targets posterior cuff and scapular retractors.', tier:'green' },
-    { name:'Scaption with external rotation ("full can")', detail:'Loads the cuff, slightly higher irritability position than full can variants.', tier:'yellow' },
-    { name:'Heavy overhead barbell press', detail:'Loads the cuff and deltoid, but far too aggressive for a still-irritable subacromial presentation.', tier:'red' }
+    { name:'Sidelying external rotation with light dumbbell', desc:'Isometric/isotonic resistance exercise performed sidelying, targeting posterior cuff musculature with light dumbbell load.', reveal:'Low load and controlled tempo directly support the rotator cuff force couple — a solid fit for this finding.', tier:'green' },
+    { name:'Prone horizontal abduction ("T" raises)', desc:'Prone exercise targeting posterior cuff and scapular retractor musculature.', reveal:'Targets the right muscle groups with an appropriate loading strategy.', tier:'green' },
+    { name:'Scaption with external rotation ("full can")', desc:'Loaded exercise performed in the scapular plane of elevation with external rotation.', reveal:'Reasonable cuff-loading exercise, but performed in a slightly higher-irritability position than the "T" raise or sidelying ER variants.', tier:'yellow' },
+    { name:'Heavy overhead barbell press', desc:'Heavy overhead pressing pattern loading the shoulder complex.', reveal:'Loads the cuff and deltoid, but far too aggressive for a still-irritable subacromial presentation.', tier:'red' }
   ],
   i2: [
-    { name:'Sleeper stretch', detail:'Sidelying passive internal rotation stretch.', tier:'green' },
-    { name:'Cross-body horizontal adduction stretch', detail:'Targets posterior shoulder tissue restriction.', tier:'green' },
-    { name:'Posterior shoulder self-mobilization against wall', detail:'Less targeted than sleeper stretch but reasonable.', tier:'yellow' },
-    { name:'Partner-assisted forced overpressure stretch', detail:'Risks excessive force on an unassessed restriction — not appropriate this early.', tier:'red' }
+    { name:'Sleeper stretch', desc:'Sidelying passive internal rotation stretch.', reveal:'Directly and specifically targets the measured IR deficit.', tier:'green' },
+    { name:'Cross-body horizontal adduction stretch', desc:'Cross-body adduction stretch targeting posterior shoulder tissue.', reveal:'Directly targets posterior shoulder restriction contributing to the IR deficit.', tier:'green' },
+    { name:'Posterior shoulder self-mobilization against wall', desc:'Sustained low-load stretch performed independently against a wall.', reveal:'A reasonable option, but less targeted to this specific deficit than the sleeper or cross-body stretch.', tier:'yellow' },
+    { name:'Partner-assisted forced overpressure stretch', desc:'Partner-assisted stretch applying manual overpressure at end range.', reveal:'Risks excessive force on a restriction whose cause hasn\u2019t actually been determined yet — not appropriate this early.', tier:'red' }
   ],
   i3: [
-    { name:'Scapular wall slides', detail:'Reinforces upward rotation and posterior tilt during elevation.', tier:'green' },
-    { name:'Lower trapezius "Y" raises', detail:'Targets a commonly underactive scapular stabilizer.', tier:'green' },
-    { name:'Serratus anterior wall push-up plus', detail:'Good target, but a more advanced progression than needed initially.', tier:'yellow' },
-    { name:'Heavy barbell shrugs', detail:'Reinforces upper trap dominance — works against the goal here.', tier:'red' }
+    { name:'Scapular wall slides', desc:'Wall-supported exercise reinforcing scapular upward rotation and posterior tilt during arm elevation.', reveal:'Reinforces the exact motion pattern that was found to be altered.', tier:'green' },
+    { name:'Lower trapezius "Y" raises', desc:'Prone or standing exercise targeting the lower trapezius in a "Y" position.', reveal:'Targets a commonly underactive scapular stabilizer relevant to this finding.', tier:'green' },
+    { name:'Serratus anterior wall push-up plus', desc:'Closed-chain exercise emphasizing scapular protraction and serratus anterior activation.', reveal:'Good target muscle, but a more advanced progression than this patient likely needs as a starting point.', tier:'yellow' },
+    { name:'Heavy barbell shrugs', desc:'Loaded shrug exercise emphasizing upper trapezius activation.', reveal:'Reinforces upper trap dominance — works against what this finding is calling for.', tier:'red' }
   ],
   i4: [
-    { name:'Side-lying stretch with towel roll', detail:'Gentle option appropriate for a still-irritable shoulder.', tier:'green' },
-    { name:'Sleeper stretch', detail:'Same tissue target as the IR asymmetry exercise — redundant use of a single treatment slot.', tier:'yellow' },
-    { name:'Cross-body stretch with scapular stabilization', detail:'Reasonable, but adds complexity not clearly needed yet.', tier:'yellow' },
-    { name:'Manual end-range joint mobilization without further assessment', detail:'Jumps to a specific manual technique before the restricting structure has actually been identified.', tier:'red' }
+    { name:'Side-lying stretch with towel roll', desc:'Sidelying stretch performed with a towel roll for support.', reveal:'A gentle, well-tolerated option appropriate for a still-irritable shoulder.', tier:'green' },
+    { name:'Sleeper stretch', desc:'Sidelying passive internal rotation stretch.', reveal:'Same tissue target as the IR asymmetry exercise — a workable but somewhat redundant use of this treatment slot.', tier:'yellow' },
+    { name:'Cross-body stretch with scapular stabilization', desc:'Cross-body adduction stretch performed with manual scapular stabilization.', reveal:'Reasonable, but adds a layer of complexity not clearly needed for this finding yet.', tier:'yellow' },
+    { name:'Manual end-range joint mobilization without further assessment', desc:'Clinician-applied manual mobilization technique at end range.', reveal:'Jumps to a specific manual technique before the actual restricting structure has been identified — premature here.', tier:'red' }
   ],
   i5: [
-    { name:'Seated thoracic extension with towel', detail:'Low-equipment, gentle home option.', tier:'green' },
-    { name:'Thoracic extension over foam roller', detail:'Effective, but more setup than needed as a starting point.', tier:'yellow' },
-    { name:'Quadruped thoracic rotation', detail:'Reasonable but a secondary priority relative to extension.', tier:'yellow' },
-    { name:'High-velocity thoracic spine manipulation', detail:'Outside the scope of what this finding calls for at this stage.', tier:'red' }
+    { name:'Seated thoracic extension with towel', desc:'Seated thoracic extension exercise performed using a rolled towel.', reveal:'Low-equipment, gentle home option well suited as a starting point.', tier:'green' },
+    { name:'Thoracic extension over foam roller', desc:'Supine thoracic extension performed over a foam roller.', reveal:'Effective, but more setup than needed as a starting point.', tier:'yellow' },
+    { name:'Quadruped thoracic rotation', desc:'Quadruped rotational mobility exercise targeting the thoracic spine.', reveal:'Reasonable, but a secondary priority relative to a straightforward extension exercise here.', tier:'yellow' },
+    { name:'High-velocity thoracic spine manipulation', desc:'High-velocity, low-amplitude manual thrust technique to the thoracic spine.', reveal:'Outside the scope of what this finding calls for at this stage.', tier:'red' }
   ],
   i6: [
-    { name:'Activity pacing and load management education', detail:'Directly addresses avoidance behavior without adding physical load.', tier:'green' },
-    { name:'Graded return-to-activity program', detail:"Appropriate longer-term, but a bigger commitment than one session's priority should carry.", tier:'yellow' },
-    { name:'Progressive resistance circuit, uninvolved-side-led', detail:'Reasonable but indirect for this specific impairment.', tier:'yellow' },
-    { name:'Immediate full return to competitive tennis without graded progression', detail:'Skips the graded exposure this impairment actually calls for.', tier:'red' }
+    { name:'Activity pacing and load management education', desc:'Patient education focused on activity pacing and graded load management.', reveal:'Directly addresses avoidance behavior without adding physical load.', tier:'green' },
+    { name:'Graded return-to-activity program', desc:'Structured, progressive return-to-activity program.', reveal:"Appropriate longer-term, but a bigger commitment than a single session's priority should carry.", tier:'yellow' },
+    { name:'Progressive resistance circuit, uninvolved-side-led', desc:'General progressive resistance circuit led by the uninvolved side.', reveal:'A reasonable but fairly indirect way to address this specific impairment.', tier:'yellow' },
+    { name:'Immediate full return to competitive tennis without graded progression', desc:'Immediate return to full competitive tennis participation.', reveal:'Skips the graded exposure this impairment is actually calling for.', tier:'red' }
   ]
 };
 
@@ -244,6 +245,7 @@ function render() {
   }
   document.getElementById('main').innerHTML = html;
   if (current === 5) initDragList();
+  if (current === 0) checkNonEmpty('groupNameInput','introContinueBtn');
   if (current === 1) checkMinWords('subjOpenInput','subjContinueBtn',10);
   if (current === 3) checkMinWords('objOpenInput','objContinueBtn',10);
 }
@@ -258,22 +260,35 @@ function checkMinWords(textareaId, btnId, min) {
   if (!ta || !btn) return;
   btn.disabled = wordCount(ta.value) < min;
 }
+function checkNonEmpty(inputId, btnId) {
+  const el = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (!el || !btn) return;
+  btn.disabled = el.value.trim().length === 0;
+}
 
 const RENDERERS = [renderIntro, renderSubjOpen, renderSubjInterview, renderObjOpen, renderObjExamine, renderImpairments, renderTreatment, renderSummary];
 
 function renderIntro() {
   return `
+    <div class="eyebrow">BEFORE YOU BEGIN</div>
+    <h1 class="stage-title">Group Members</h1>
+    <div class="panel">
+      <label style="font-weight:600; display:block; margin-bottom:10px;">Enter the names of everyone in your group (one per line, or separated by commas).</label>
+      <textarea id="groupNameInput" placeholder="e.g. Jane Smith, Alex Lee, Priya Patel" oninput="checkNonEmpty('groupNameInput','introContinueBtn')">${state.groupName}</textarea>
+      <div class="note">This will appear on your completion certificate at the end of the case.</div>
+    </div>
     <div class="eyebrow">CASE 1</div>
     <h1 class="stage-title">Right Shoulder Pain</h1>
     <div style="width:100%; height:220px; border:1px dashed var(--line-strong); background:var(--paper-dim); margin-bottom:18px; display:flex; align-items:center; justify-content:center;">
       <span style="color:var(--ink-soft); font-size:13.5px;">Image placeholder — patient / treatment setting</span>
     </div>
     <div class="panel">
-      <p><strong>Patient:</strong> 52-year-old right-hand-dominant male, recreational tennis player</p>
+      <p><strong>Patient:</strong> 52-year-old right-hand-dominant adult, recreational tennis player (3x/week)</p>
       <p><strong>Presenting complaint:</strong> Right lateral shoulder pain, gradual onset ~4 months ago</p>
       <p><strong>Referral:</strong> Self-referred to outpatient orthopedic physical therapy</p>
     </div>
-    <button class="btn" onclick="goTo(1)">Begin Subjective Interview</button>
+    <button class="btn" id="introContinueBtn" disabled onclick="saveAndGo('groupNameInput','groupName',1)">Begin Subjective Interview</button>
   `;
 }
 
@@ -361,9 +376,9 @@ function renderObjExamine() {
     <div class="eyebrow">OBJECTIVE — EXAMINE</div>
     <h1 class="stage-title">Select Your Tests and Measures</h1>
     <p class="lede">Organized by purpose: rule out other sources, differentiate between competing hypotheses, and search for underlying impairments.</p>
-    ${renderObjCategory('A. Screening', 'Rule out non-musculoskeletal sources and assess gross movement patterns', SCREENING, state.screeningPicked, SCREEN_LIMIT, 'toggleScreening')}
-    ${renderObjCategory('B. Differential', 'Differentiate between competing shoulder diagnoses', DIFFERENTIAL, state.differentialPicked, DIFF_LIMIT, 'toggleDifferential')}
-    ${renderObjCategory('C. Impairment Searching', 'Only impairments revealed here will be available to prioritize next', IMPSEARCH, state.impairmentSearchPicked, IMPSEARCH_LIMIT, 'toggleImpSearch')}
+    ${renderObjCategory('A. Safety and Gross Movement Screening', 'Rule out non-musculoskeletal sources and assess gross movement patterns', SCREENING, state.screeningPicked, SCREEN_LIMIT, 'toggleScreening')}
+    ${renderObjCategory('B. Differential Diagnosis Assessments', 'Differentiate between competing shoulder diagnoses', DIFFERENTIAL, state.differentialPicked, DIFF_LIMIT, 'toggleDifferential')}
+    ${renderObjCategory('C. Body Structure & Function Measurements', 'Only impairments revealed here will be available to prioritize next', IMPSEARCH, state.impairmentSearchPicked, IMPSEARCH_LIMIT, 'toggleImpSearch')}
     <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="goTo(5)">Continue to Impairment Priority</button>
   `;
 }
@@ -442,22 +457,25 @@ function renderTreatment() {
       const options = EXERCISES[impId];
       const slots = state.exerciseSlots[impId] || [];
       const menuChosenIdxs = slots.filter(s => s.type === 'menu').map(s => s.idx);
-      const hasOther = slots.some(s => s.type === 'other');
+      const committedOther = slots.find(s => s.type === 'other');
+      const showInputRow = state.otherShown[impId] || !!committedOther;
       return `
         <div class="impairment-block">
           <h3>Priority #${rank} — ${imp.name}</h3>
           <div class="priority-tag">Select ${need} exercise${need>1?'s':''} total — from the list, written in, or a mix (${slots.length} / ${need} filled)</div>
           ${options.map((ex, idx) => `
             <div class="exercise-card ${menuChosenIdxs.includes(idx) ? 'selected' : ''}" onclick="toggleMenuExercise('${impId}', ${idx}, ${need})">
-              <div><div class="exercise-name">${ex.name}</div><div class="exercise-detail">${ex.detail}</div></div>
+              <div><div class="exercise-name">${ex.name}</div><div class="exercise-detail">${ex.desc}</div></div>
             </div>
           `).join('')}
           <div class="slot-note">Don't see a fit? Write in your own exercise for one slot:</div>
-          ${hasOther ? `
+          ${showInputRow ? `
             <div style="display:flex; gap:8px; align-items:center;">
-              <input class="other-input" style="flex:1;" value="${(slots.find(s=>s.type==='other')||{}).text || ''}" oninput="updateOtherExercise('${impId}', this.value)" placeholder="Describe your exercise...">
-              <button class="btn small secondary" onclick="removeOtherExercise('${impId}')">Remove</button>
+              <input class="other-input" style="flex:1;" value="${committedOther ? committedOther.text : ''}" placeholder="Describe your exercise...">
+              <button class="btn small" onclick="commitOtherExercise('${impId}', this.previousElementSibling.value, ${need})">${committedOther ? 'Update' : 'Set'}</button>
+              ${committedOther ? `<button class="btn small secondary" onclick="removeOtherExercise('${impId}')">Remove</button>` : `<button class="btn small secondary" onclick="cancelOtherExercise('${impId}')">Cancel</button>`}
             </div>
+            ${!committedOther ? `<div class="slot-note">Not counted as a slot until you click Set.</div>` : ''}
           ` : `<button class="btn small secondary" ${slots.length >= need ? 'disabled' : ''} onclick="addOtherExercise('${impId}')">+ Write in an exercise</button>`}
         </div>
       `;
@@ -467,7 +485,7 @@ function renderTreatment() {
       <textarea id="otherIntInput" placeholder="Note anything else you'd include this session...">${state.otherInterventions}</textarea>
     </div>
     ${renderDosageBlocks(priorities)}
-    <button class="btn" ${!allSlotsFilledAndDosed(priorities) ? 'disabled' : ''} onclick="completeTreatment()">Complete Case</button>
+    <button class="btn" id="completeCaseBtn" ${!allSlotsFilledAndDosed(priorities) ? 'disabled' : ''} onclick="completeTreatment()">Complete Case</button>
   `;
 }
 
@@ -480,18 +498,32 @@ function toggleMenuExercise(impId, idx, need) {
   render();
 }
 function addOtherExercise(impId) {
-  const slots = state.exerciseSlots[impId] || [];
-  slots.push({ type:'other', text:'' });
-  state.exerciseSlots[impId] = slots;
+  state.otherShown[impId] = true;
   render();
 }
-function updateOtherExercise(impId, text) {
+function cancelOtherExercise(impId) {
+  state.otherShown[impId] = false;
+  render();
+}
+function commitOtherExercise(impId, text, need) {
+  const trimmed = (text || '').trim();
+  if (!trimmed) return;
   const slots = state.exerciseSlots[impId] || [];
-  const s = slots.find(x => x.type === 'other');
-  if (s) s.text = text;
+  const existing = slots.find(s => s.type === 'other');
+  if (existing) {
+    existing.text = trimmed;
+  } else if (slots.length < need) {
+    slots.push({ type:'other', text: trimmed });
+  } else {
+    return; // no room — shouldn't normally happen since the button is only shown when a slot is open
+  }
+  state.exerciseSlots[impId] = slots;
+  state.otherShown[impId] = true;
+  render();
 }
 function removeOtherExercise(impId) {
   state.exerciseSlots[impId] = (state.exerciseSlots[impId] || []).filter(s => s.type !== 'other');
+  state.otherShown[impId] = false;
   render();
 }
 
@@ -534,6 +566,12 @@ function renderDosageBlocks(priorities) {
 function saveDosageField(key, field, value) {
   if (!state.dosage[key]) state.dosage[key] = {};
   state.dosage[key][field] = value;
+  updateCompleteBtn();
+}
+function updateCompleteBtn() {
+  const btn = document.getElementById('completeCaseBtn');
+  if (!btn) return;
+  btn.disabled = !allSlotsFilledAndDosed(state.topPriorities || []);
 }
 
 function allSlotsFilledAndDosed(priorities) {
@@ -563,7 +601,8 @@ function tierFeedbackBlock(label, picked, items) {
       <div style="font-weight:600; margin-bottom:8px;">${label}</div>
       ${picked.map(id => {
         const it = items.find(x => x.id === id);
-        return `<div class="feedback-item">${TIER_DOT[it.tier]}<span>${it.name} — <em>${TIER_LABEL[it.tier]}</em></span></div>`;
+        const label2 = it.name || it.q;
+        return `<div class="feedback-item">${TIER_DOT[it.tier]}<span>${label2} — <em>${TIER_LABEL[it.tier]}</em></span></div>`;
       }).join('')}
     </div>
   `;
@@ -576,16 +615,16 @@ function renderSummary() {
     <div class="eyebrow">CASE COMPLETE</div>
     <h1 class="stage-title">Case 1 Summary</h1>
     <div class="cert-field">
-      <div class="cert-field-label">Group name</div>
-      <input type="text" id="groupNameInput" value="${state.groupName}" placeholder="Enter your group name" oninput="state.groupName = this.value; document.getElementById('certGroupDisplay').textContent = this.value;">
+      <div class="cert-field-label">Group members</div>
+      <input type="text" id="groupNameInputSummary" value="${state.groupName}" placeholder="Enter group member names" oninput="state.groupName = this.value; document.getElementById('certGroupDisplay').textContent = this.value;">
     </div>
 
     <h1 class="stage-title" style="font-size:19px;">Subjective &amp; Objective — Choice Quality</h1>
     <p class="lede">Each item you selected is now revealed as green (strong), yellow (acceptable, not optimal), or red (not well advised).</p>
     ${tierFeedbackBlock('Subjective Questions', state.subjPicked, SUBJ_QUESTIONS)}
-    ${tierFeedbackBlock('Screening', state.screeningPicked, SCREENING)}
-    ${tierFeedbackBlock('Differential', state.differentialPicked, DIFFERENTIAL)}
-    ${tierFeedbackBlock('Impairment Searching', state.impairmentSearchPicked, IMPSEARCH)}
+    ${tierFeedbackBlock('Safety and Gross Movement Screening', state.screeningPicked, SCREENING)}
+    ${tierFeedbackBlock('Differential Diagnosis Assessments', state.differentialPicked, DIFFERENTIAL)}
+    ${tierFeedbackBlock('Body Structure & Function Measurements', state.impairmentSearchPicked, IMPSEARCH)}
 
     <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Impairment Prioritization</h1>
     <div class="panel">
@@ -599,9 +638,11 @@ function renderSummary() {
         const key = impId + '_' + slotIdx;
         const d = state.dosage[key] || {};
         const tierInfo = slot.type === 'menu' ? `${TIER_DOT[EXERCISES[impId][slot.idx].tier]} <em>${TIER_LABEL[EXERCISES[impId][slot.idx].tier]}</em>` : '<em>Custom write-in — discuss in debrief</em>';
+        const revealText = slot.type === 'menu' ? EXERCISES[impId][slot.idx].reveal : '';
         return `<div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line);">
           <div style="font-weight:600;">${slotLabel(impId, slot)}</div>
           <div style="font-size:13px; color:var(--ink-soft); margin-bottom:6px;">For: ${IMPAIRMENTS[impId].name} — ${tierInfo}</div>
+          ${revealText ? `<div style="font-size:13.3px; margin-bottom:6px;">${revealText}</div>` : ''}
           <div style="font-size:13.5px;">Dosage: ${d.sets||'—'} sets × ${d.reps||'—'} reps, ${d.loadtype||'—'} ${d.loadval||''}</div>
           <div style="font-size:13.5px; margin-top:4px; color:var(--ink-soft);">${d.rationale||''}</div>
         </div>`;
