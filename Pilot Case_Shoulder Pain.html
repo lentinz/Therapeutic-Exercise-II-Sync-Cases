@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case 1 — Right Shoulder Pain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAFAF7; --paper-dim: #F2EFE8; --ink: #1C2321; --ink-soft: #5B6560;
+    --teal: #28584F; --teal-dim: #E4ECE9; --ochre: #9C6B2E; --ochre-dim: #F3EADA;
+    --forest: #3D6B4A; --forest-dim: #E5EEE6; --line: #D9D4C7; --line-strong: #B9B2A0;
+    --yellow: #B79328; --yellow-dim: #FBF3DD; --red: #B0402E; --red-dim: #F7E6E1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; line-height: 1.55; }
+  h1, h2, h3, .serif { font-family: 'Source Serif 4', serif; }
+  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  .sidebar { border-right: 1px solid var(--line); padding: 28px 22px; background: var(--paper-dim); }
+  .sidebar-title { font-size: 12px; letter-spacing: 0.02em; color: var(--ink-soft); margin-bottom: 4px; }
+  .sidebar-case { font-family: 'Source Serif 4', serif; font-size: 19px; font-weight: 600; margin-bottom: 28px; line-height: 1.3; }
+  .stage-list { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--line); }
+  .stage-item { position: relative; padding: 9px 0 9px 18px; font-size: 13.5px; color: var(--ink-soft); }
+  .stage-item::before { content: ''; position: absolute; left: -6px; top: 14px; width: 9px; height: 9px; border-radius: 50%; background: var(--paper-dim); border: 2px solid var(--line-strong); }
+  .stage-item.active { color: var(--ink); font-weight: 600; }
+  .stage-item.active::before { border-color: var(--teal); background: var(--teal); }
+  .stage-item.done { color: var(--ink); }
+  .stage-item.done::before { border-color: var(--forest); background: var(--forest); }
+  .main { padding: 44px 56px; max-width: 800px; }
+  .eyebrow { color: var(--teal); font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+  h1.stage-title { font-size: 27px; font-weight: 600; margin: 0 0 18px 0; }
+  p.lede { color: var(--ink-soft); margin-bottom: 26px; max-width: 66ch; }
+  .panel { border: 1px solid var(--line); background: #fff; padding: 22px 24px; margin-bottom: 18px; }
+  .panel.dim { background: var(--paper-dim); }
+  textarea { width: 100%; min-height: 90px; border: 1px solid var(--line); padding: 12px 14px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14.5px; color: var(--ink); resize: vertical; background: var(--paper); }
+  input[type=number], input[type=text], select { border: 1px solid var(--line); padding: 8px 10px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; background: var(--paper); color: var(--ink); }
+  textarea:focus, button:focus-visible, .tile:focus-visible, input:focus { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .btn { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 11px 22px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); cursor: pointer; margin-top: 16px; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.secondary { background: transparent; color: var(--ink); }
+  .btn.small { padding: 7px 14px; font-size: 13px; margin-top: 0; }
+  .counter { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
+  .counter strong { color: var(--teal); }
+  .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tile { border: 1px solid var(--line); background: var(--paper); padding: 13px 15px; text-align: left; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; font-size: 13.8px; color: var(--ink); }
+  .tile:hover:not(:disabled) { border-color: var(--teal); }
+  .tile.selected { border-color: var(--teal); background: var(--teal-dim); font-weight: 600; }
+  .tile:disabled:not(.selected) { opacity: 0.4; cursor: not-allowed; }
+  .category-label { font-size: 11px; color: var(--ink-soft); display: block; margin-bottom: 3px; }
+  .finding { margin-top: 4px; padding: 14px 16px; border-left: 3px solid var(--line-strong); background: var(--paper-dim); font-size: 14px; }
+  .finding-tag { font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px; color: var(--teal); }
+  .obj-category { margin-bottom: 34px; }
+  .obj-category h3 { font-size: 16px; margin-bottom: 4px; }
+  .obj-category .cat-sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 12px; }
+  table.rom-table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 13.5px; }
+  table.rom-table th, table.rom-table td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }
+  table.rom-table th { background: var(--paper-dim); font-weight: 600; }
+  .imp-drag-list { list-style: none; padding: 0; margin: 0 0 18px 0; }
+  .imp-drag-item { border: 1px solid var(--line); background: #fff; padding: 14px 16px; margin-bottom: 8px; cursor: grab; display: flex; align-items: center; gap: 12px; }
+  .imp-drag-item.dragging { opacity: 0.4; }
+  .imp-rank { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 20px; color: var(--teal); width: 24px; }
+  .imp-name { font-weight: 600; font-size: 14.5px; }
+  .imp-desc { color: var(--ink-soft); font-size: 13px; margin-top: 2px; }
+  .exercise-card { border: 1px solid var(--line); padding: 14px 16px; margin-bottom: 10px; cursor: pointer; display: flex; gap: 14px; align-items: flex-start; }
+  .exercise-card.selected { border-color: var(--teal); background: var(--teal-dim); }
+  .exercise-card.disabled { cursor: default; opacity: 0.55; }
+  .exercise-icon { flex-shrink: 0; width: 44px; height: 44px; }
+  .exercise-name { font-weight: 600; font-size: 14.5px; margin-bottom: 3px; }
+  .exercise-detail { font-size: 13.3px; color: var(--ink-soft); }
+  .impairment-block { margin-bottom: 34px; }
+  .impairment-block h3 { font-size: 16px; margin-bottom: 4px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .priority-tag { font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
+  .dosage-row { display: flex; gap: 14px; margin: 12px 0; flex-wrap: wrap; }
+  .dosage-field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13.8px; }
+  .summary-row span:first-child { color: var(--ink-soft); }
+  .feedback-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13.8px; }
+  .feedback-mark { flex-shrink: 0; font-weight: 700; }
+  .feedback-mark.hit { color: var(--forest); }
+  .feedback-mark.miss { color: var(--ochre); }
+  .feedback-mark { flex-shrink: 0; font-weight: 700; }
+  .note { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; }
+  .hidden { display: none; }
+  .tier-dot { display:inline-block; width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .tier-green { background: var(--forest); }
+  .tier-yellow { background: var(--yellow); }
+  .tier-red { background: var(--red); }
+  .other-input { width: 100%; border: 1px dashed var(--line-strong); padding: 10px 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13.8px; background: var(--paper-dim); margin-top: 6px; box-sizing: border-box; }
+  .slot-note { font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 12px 0; }
+  .cert-field { margin-bottom: 20px; }
+  .cert-field-label { font-weight: 600; font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
+  #groupNameInput { font-size: 15px; padding: 8px 10px; width: 260px; }
+  @media print {
+    .sidebar, .btn, #printBar { display: none !important; }
+    .app { display: block; }
+    .main { padding: 10px; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="sidebar-title">SIG SYNCHRONOUS SESSION</div>
+    <div class="sidebar-case">Case 1<br>Right Shoulder Pain</div>
+    <ul class="stage-list" id="stageList"></ul>
+  </nav>
+  <main class="main" id="main"></main>
+</div>
+<script>
+const STAGES = ["Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Exercise & Dosage","Case Summary"];
+let current = 0;
+
+const state = {
+  groupName: "",
+  subjOpen: "", subjPicked: [],
+  objOpen: "",
+  screeningPicked: [], differentialPicked: [], impairmentSearchPicked: [],
+  impairmentOrder: [], topPriorities: [],
+  exerciseSlots: {},   // { impId: [ {type:'menu', idx} | {type:'other', text} ] }
+  dosage: {},           // { impId_slotIdx: {sets,reps,loadtype,loadval,rationale} }
+  otherInterventions: ""
+};
+
+const TIER_DOT = { green: '<span class="tier-dot tier-green"></span>', yellow: '<span class="tier-dot tier-yellow"></span>', red: '<span class="tier-dot tier-red"></span>' };
+const TIER_LABEL = { green: 'Green — strong choice', yellow: 'Yellow — acceptable, not optimal', red: 'Red — not well advised here' };
+
+const SUBJ_QUESTIONS = [
+  { id:'s1', cat:'Onset', q:'How did the pain begin?', a:'Gradual onset over 4 months, no single traumatic event. Started after increasing tennis play from once to three times weekly.', tier:'green' },
+  { id:'s2', cat:'Pain behavior', q:'Any night pain or trouble sleeping on that side?', a:'Wakes 2–3 times per night when rolling onto the right shoulder. Cannot sleep on that side at all currently.', tier:'green' },
+  { id:'s3', cat:'Aggravating factors', q:'What activities make it worse?', a:'Overhead serving motion in tennis, reaching into a high cabinet, and putting on a jacket.', tier:'green' },
+  { id:'s4', cat:'Red flags', q:'Any unexplained weight loss, fever, or night sweats?', a:'None reported. No constitutional symptoms.', tier:'green' },
+  { id:'s5', cat:'Prior treatment', q:'Has anything been tried so far?', a:'Over-the-counter NSAIDs with mild, temporary relief. No formal PT or injections yet.', tier:'green' },
+  { id:'s6', cat:'Function', q:'What activities matter most to get back to?', a:'Wants to return to competitive tennis and is frustrated by not being able to serve without pain.', tier:'yellow' },
+  { id:'s7', cat:'History', q:'Any prior shoulder injuries?', a:'None on the right. Reports a minor left shoulder strain 6 years ago that resolved without treatment.', tier:'yellow' },
+  { id:'s8', cat:'Occupation', q:'What does a typical work day involve?', a:'Desk-based project manager, occasional overhead reaching for storage but not repetitive or loaded.', tier:'red' }
+];
+const SUBJ_LIMIT = 5;
+
+const SCREENING = [
+  { id:'sc1', name:'Cervical spine active screen', desc:'AROM and overpressure, cervical clearing', result:'Full, pain-free cervical AROM in all planes. No reproduction of shoulder symptoms.', tier:'green' },
+  { id:'sc2', name:'Systemic / red flag screen', desc:'Vitals, constitutional symptoms check', result:'No fever, no unexplained weight loss, no night sweats. Vitals within normal limits.', tier:'green' },
+  { id:'sc3', name:'Apley scratch test', desc:'Combined-motion gross shoulder mobility screen, bilateral', result:'Mild restriction reaching up the back on the right compared to the left. Reaching overhead behind the head is roughly symmetrical.', tier:'yellow' },
+  { id:'sc4', name:'Functional squat observation', desc:'General lower-quarter movement screen, unrelated body region', result:'Full squat depth with no compensations noted — unremarkable, and not clinically relevant to this presentation.', tier:'red' }
+];
+const SCREEN_LIMIT = 2;
+
+const DIFFERENTIAL = [
+  { id:'d1', name:"Neer's impingement test", desc:'Passive forward flexion with scapular stabilization', result:'Positive — reproduces the familiar lateral shoulder pain.', tier:'green' },
+  { id:'d2', name:'Hawkins-Kennedy test', desc:'Passive internal rotation at 90° flexion', result:'Positive — reproduces the lateral shoulder pain.', tier:'green' },
+  { id:'d3', name:'Empty can test', desc:'Isometric resistance in scapular plane, thumb down', result:'Pain and mild weakness on the right compared to the left.', tier:'yellow' },
+  { id:'d4', name:'Drop arm test', desc:'Screens for full-thickness rotator cuff tear', result:'Negative — the arm is lowered with control.', tier:'red' }
+];
+const DIFF_LIMIT = 2;
+
+const IMPSEARCH = [
+  { id:'is2', name:'Resisted strength testing by plane', desc:'Isometric resistance testing, scapular plane and rotations', revealsImpairment:'i1', result:'Reduced force production on resisted abduction and external rotation on the right compared to the left, limited in part by pain.', tier:'green' },
+  { id:'is1', name:'AROM / PROM measurement (table)', desc:'Flexion, abduction, internal and external rotation, both sides', revealsImpairment:'i2', isTable:true, tier:'green' },
+  { id:'is3', name:'Scapular dyskinesis observation', desc:'Observe scapular motion during active arm elevation', revealsImpairment:'i3', result:'Early scapular elevation and mild winging noted during active elevation past 90°, more pronounced on the right.', tier:'green' },
+  { id:'is4', name:'Cross-body adduction / posterior shoulder mobility', desc:'Passive cross-body adduction, bilateral comparison', revealsImpairment:'i4', result:'Cross-body adduction measured approximately 20° less on the right than the left.', tier:'yellow' },
+  { id:'is5', name:'Thoracic spine mobility screen', desc:'Active thoracic extension and rotation', revealsImpairment:'i5', result:'Reduced active thoracic extension noted, with a tendency to substitute lumbar extension.', tier:'yellow' },
+  { id:'is6', name:'Functional task observation', desc:'Observe reaching, dressing-type movement patterns', revealsImpairment:'i6', result:'Guarding and hesitancy observed when reaching overhead; patient reports avoiding the motion whenever possible.', tier:'red' }
+];
+const IMPSEARCH_LIMIT = 3;
+
+const ROM_DATA = [
+  { plane:'Flexion', aromR:'165°', aromL:'180°', promR:'175°', promL:'180°' },
+  { plane:'Abduction', aromR:'150° (painful arc 70-120°)', aromL:'180°', promR:'165°', promL:'180°' },
+  { plane:'Internal rotation', aromR:'45°', aromL:'60°', promR:'50°', promL:'62°' },
+  { plane:'External rotation', aromR:'75°', aromL:'85°', promR:'80°', promL:'85°' }
+];
+
+const IMPAIRMENTS = {
+  i1: { name:'Reduced force production — resisted abduction / external rotation', desc:'Right-sided weakness relative to the left on manual muscle testing.' },
+  i2: { name:'Internal rotation ROM asymmetry', desc:'Measured IR deficit compared to the uninvolved side; cause not yet determined.' },
+  i3: { name:'Altered scapular motion during elevation', desc:'Early elevation and mild winging observed past 90° of arm elevation.' },
+  i4: { name:'Reduced cross-body adduction ROM', desc:'Approximately 20° less than the uninvolved side; contributing structure not yet determined.' },
+  i5: { name:'Reduced thoracic extension mobility', desc:'Limited active thoracic extension with lumbar substitution.' },
+  i6: { name:'Movement avoidance / guarding with overhead tasks', desc:'Observed hesitancy and self-reported avoidance of overhead reaching.' }
+};
+
+// Exercise menu per impairment: 4 options each, tiered. Impairments i1-i3 (case-central) skew green;
+// i4-i6 (real but lower priority this visit) skew yellow/red as a natural consequence of over-prioritizing them.
+const EXERCISES = {
+  i1: [
+    { name:'Sidelying external rotation with light dumbbell', detail:'Isolates posterior cuff to support the rotator cuff force couple; low load, controlled tempo.', tier:'green' },
+    { name:'Prone horizontal abduction ("T" raises)', detail:'Targets posterior cuff and scapular retractors.', tier:'green' },
+    { name:'Scaption with external rotation ("full can")', detail:'Loads the cuff, slightly higher irritability position than full can variants.', tier:'yellow' },
+    { name:'Heavy overhead barbell press', detail:'Loads the cuff and deltoid, but far too aggressive for a still-irritable subacromial presentation.', tier:'red' }
+  ],
+  i2: [
+    { name:'Sleeper stretch', detail:'Sidelying passive internal rotation stretch.', tier:'green' },
+    { name:'Cross-body horizontal adduction stretch', detail:'Targets posterior shoulder tissue restriction.', tier:'green' },
+    { name:'Posterior shoulder self-mobilization against wall', detail:'Less targeted than sleeper stretch but reasonable.', tier:'yellow' },
+    { name:'Partner-assisted forced overpressure stretch', detail:'Risks excessive force on an unassessed restriction — not appropriate this early.', tier:'red' }
+  ],
+  i3: [
+    { name:'Scapular wall slides', detail:'Reinforces upward rotation and posterior tilt during elevation.', tier:'green' },
+    { name:'Lower trapezius "Y" raises', detail:'Targets a commonly underactive scapular stabilizer.', tier:'green' },
+    { name:'Serratus anterior wall push-up plus', detail:'Good target, but a more advanced progression than needed initially.', tier:'yellow' },
+    { name:'Heavy barbell shrugs', detail:'Reinforces upper trap dominance — works against the goal here.', tier:'red' }
+  ],
+  i4: [
+    { name:'Side-lying stretch with towel roll', detail:'Gentle option appropriate for a still-irritable shoulder.', tier:'green' },
+    { name:'Sleeper stretch', detail:'Same tissue target as the IR asymmetry exercise — redundant use of a single treatment slot.', tier:'yellow' },
+    { name:'Cross-body stretch with scapular stabilization', detail:'Reasonable, but adds complexity not clearly needed yet.', tier:'yellow' },
+    { name:'Manual end-range joint mobilization without further assessment', detail:'Jumps to a specific manual technique before the restricting structure has actually been identified.', tier:'red' }
+  ],
+  i5: [
+    { name:'Seated thoracic extension with towel', detail:'Low-equipment, gentle home option.', tier:'green' },
+    { name:'Thoracic extension over foam roller', detail:'Effective, but more setup than needed as a starting point.', tier:'yellow' },
+    { name:'Quadruped thoracic rotation', detail:'Reasonable but a secondary priority relative to extension.', tier:'yellow' },
+    { name:'High-velocity thoracic spine manipulation', detail:'Outside the scope of what this finding calls for at this stage.', tier:'red' }
+  ],
+  i6: [
+    { name:'Activity pacing and load management education', detail:'Directly addresses avoidance behavior without adding physical load.', tier:'green' },
+    { name:'Graded return-to-activity program', detail:"Appropriate longer-term, but a bigger commitment than one session's priority should carry.", tier:'yellow' },
+    { name:'Progressive resistance circuit, uninvolved-side-led', detail:'Reasonable but indirect for this specific impairment.', tier:'yellow' },
+    { name:'Immediate full return to competitive tennis without graded progression', detail:'Skips the graded exposure this impairment actually calls for.', tier:'red' }
+  ]
+};
+
+const IDEAL_TOP_IMPAIRMENTS = ['i1','i3','i2'];
+
+function revealedImpairmentIds() {
+  return state.impairmentSearchPicked.map(id => IMPSEARCH.find(x => x.id === id).revealsImpairment);
+}
+
+function renderSidebar() {
+  document.getElementById('stageList').innerHTML = STAGES.map((s,i) => {
+    let cls = i === current ? 'active' : (i < current ? 'done' : '');
+    const clickable = i <= current && i !== current;
+    return `<li class="stage-item ${cls}" ${clickable ? `style="cursor:pointer;" onclick="goTo(${i})"` : ''}>${s}</li>`;
+  }).join('');
+}
+
+function goTo(stage) { current = stage; render(); window.scrollTo(0,0); }
+
+function render() {
+  renderSidebar();
+  let html = RENDERERS[current]();
+  if (current > 0) {
+    html = `<button class="btn secondary small" style="margin-bottom:20px;" onclick="goTo(${current-1})">&larr; Back</button>` + html;
+  }
+  document.getElementById('main').innerHTML = html;
+  if (current === 5) initDragList();
+  if (current === 1) checkMinWords('subjOpenInput','subjContinueBtn',10);
+  if (current === 3) checkMinWords('objOpenInput','objContinueBtn',10);
+}
+
+function wordCount(text) {
+  const t = (text || '').trim();
+  return t.length === 0 ? 0 : t.split(/\s+/).length;
+}
+function checkMinWords(textareaId, btnId, min) {
+  const ta = document.getElementById(textareaId);
+  const btn = document.getElementById(btnId);
+  if (!ta || !btn) return;
+  btn.disabled = wordCount(ta.value) < min;
+}
+
+const RENDERERS = [renderIntro, renderSubjOpen, renderSubjInterview, renderObjOpen, renderObjExamine, renderImpairments, renderTreatment, renderSummary];
+
+function renderIntro() {
+  return `
+    <div class="eyebrow">CASE 1</div>
+    <h1 class="stage-title">Right Shoulder Pain</h1>
+    <div style="width:100%; height:220px; border:1px dashed var(--line-strong); background:var(--paper-dim); margin-bottom:18px; display:flex; align-items:center; justify-content:center;">
+      <span style="color:var(--ink-soft); font-size:13.5px;">Image placeholder — patient / treatment setting</span>
+    </div>
+    <div class="panel">
+      <p><strong>Patient:</strong> 52-year-old right-hand-dominant adult, recreational tennis player (3x/week)</p>
+      <p><strong>Presenting complaint:</strong> Right lateral shoulder pain, gradual onset ~4 months ago</p>
+      <p><strong>Referral:</strong> Self-referred to outpatient orthopedic physical therapy</p>
+    </div>
+    <button class="btn" onclick="goTo(1)">Begin Subjective Interview</button>
+  `;
+}
+
+function renderSubjOpen() {
+  return `
+    <div class="eyebrow">SUBJECTIVE — REFLECT</div>
+    <h1 class="stage-title">Initial Thoughts</h1>
+    <p class="lede">Before interviewing the patient, consider what you already know from the case introduction.</p>
+    <div class="panel">
+      <label style="font-weight:600; display:block; margin-bottom:10px;">What are your initial thoughts on this case? What are you curious about or concerned about? (minimum 10 words)</label>
+      <textarea id="subjOpenInput" placeholder="Type your reasoning here..." oninput="checkMinWords('subjOpenInput','subjContinueBtn',10)">${state.subjOpen}</textarea>
+    </div>
+    <button class="btn" id="subjContinueBtn" disabled onclick="saveAndGo('subjOpenInput','subjOpen',2)">Continue to Interview</button>
+  `;
+}
+
+function renderSubjInterview() {
+  const picked = state.subjPicked;
+  return `
+    <div class="eyebrow">SUBJECTIVE — INTERVIEW</div>
+    <h1 class="stage-title">Select Your Questions</h1>
+    <p class="lede">Choose the questions you'd prioritize asking this patient. You may select up to ${SUBJ_LIMIT} of ${SUBJ_QUESTIONS.length}.</p>
+    <div class="counter">Selected: <strong>${picked.length} / ${SUBJ_LIMIT}</strong></div>
+    <div class="tile-grid">
+      ${SUBJ_QUESTIONS.map(q => `
+        <button class="tile ${picked.includes(q.id) ? 'selected' : ''}" ${!picked.includes(q.id) && picked.length >= SUBJ_LIMIT ? 'disabled' : ''} onclick="toggleSubj('${q.id}')">
+          <span class="category-label">${q.cat}</span>${q.q}
+        </button>
+      `).join('')}
+    </div>
+    <div>
+      ${picked.map(id => {
+        const q = SUBJ_QUESTIONS.find(x => x.id === id);
+        return `<div class="finding"><span class="finding-tag">${q.q}</span>${q.a}</div>`;
+      }).join('')}
+    </div>
+    <button class="btn" ${picked.length === 0 ? 'disabled' : ''} onclick="goTo(3)">Continue to Objective Exam</button>
+  `;
+}
+function toggleSubj(id) { toggleInArr(state.subjPicked, id, SUBJ_LIMIT); render(); }
+
+function renderObjOpen() {
+  return `
+    <div class="eyebrow">OBJECTIVE — REFLECT</div>
+    <h1 class="stage-title">What Would You Test?</h1>
+    <p class="lede">Based on the subjective findings so far, what do you want to examine and why?</p>
+    <div class="panel">
+      <label style="font-weight:600; display:block; margin-bottom:10px;">What would you want to test, and what are you hoping to rule in or out? (minimum 10 words)</label>
+      <textarea id="objOpenInput" placeholder="Type your reasoning here..." oninput="checkMinWords('objOpenInput','objContinueBtn',10)">${state.objOpen}</textarea>
+    </div>
+    <button class="btn" id="objContinueBtn" disabled onclick="saveAndGo('objOpenInput','objOpen',4)">Continue to Exam Selection</button>
+  `;
+}
+
+function romTableHtml() {
+  return `<table class="rom-table">
+    <tr><th>Plane</th><th>AROM (R)</th><th>AROM (L)</th><th>PROM (R)</th><th>PROM (L)</th></tr>
+    ${ROM_DATA.map(r => `<tr><td>${r.plane}</td><td>${r.aromR}</td><td>${r.aromL}</td><td>${r.promR}</td><td>${r.promL}</td></tr>`).join('')}
+  </table>`;
+}
+
+function renderObjCategory(title, sub, items, picked, limit, toggleFn) {
+  return `
+    <div class="obj-category">
+      <h3>${title}</h3>
+      <div class="cat-sub">${sub} — select up to ${limit} <span class="counter"><strong>${picked.length} / ${limit}</strong></span></div>
+      <div class="tile-grid">
+        ${items.map(it => `
+          <button class="tile ${picked.includes(it.id) ? 'selected' : ''}" ${!picked.includes(it.id) && picked.length >= limit ? 'disabled' : ''} onclick="${toggleFn}('${it.id}')">
+            <span class="category-label">${it.desc}</span>${it.name}
+          </button>
+        `).join('')}
+      </div>
+      ${picked.map(id => {
+        const it = items.find(x => x.id === id);
+        if (it.isTable) return `<div class="finding"><span class="finding-tag">${it.name}</span>${romTableHtml()}</div>`;
+        return `<div class="finding"><span class="finding-tag">${it.name}</span>${it.result}</div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderObjExamine() {
+  return `
+    <div class="eyebrow">OBJECTIVE — EXAMINE</div>
+    <h1 class="stage-title">Select Your Tests and Measures</h1>
+    <p class="lede">Organized by purpose: rule out other sources, differentiate between competing hypotheses, and search for underlying impairments.</p>
+    ${renderObjCategory('A. Screening', 'Rule out non-musculoskeletal sources and assess gross movement patterns', SCREENING, state.screeningPicked, SCREEN_LIMIT, 'toggleScreening')}
+    ${renderObjCategory('B. Differential', 'Differentiate between competing shoulder diagnoses', DIFFERENTIAL, state.differentialPicked, DIFF_LIMIT, 'toggleDifferential')}
+    ${renderObjCategory('C. Impairment Searching', 'Only impairments revealed here will be available to prioritize next', IMPSEARCH, state.impairmentSearchPicked, IMPSEARCH_LIMIT, 'toggleImpSearch')}
+    <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="goTo(5)">Continue to Impairment Priority</button>
+  `;
+}
+function toggleScreening(id) { toggleInArr(state.screeningPicked, id, SCREEN_LIMIT); render(); }
+function toggleDifferential(id) { toggleInArr(state.differentialPicked, id, DIFF_LIMIT); render(); }
+function toggleImpSearch(id) { toggleInArr(state.impairmentSearchPicked, id, IMPSEARCH_LIMIT); render(); }
+function toggleInArr(arr, id, limit) {
+  const i = arr.indexOf(id);
+  if (i >= 0) arr.splice(i,1);
+  else if (arr.length < limit) arr.push(id);
+}
+
+function renderImpairments() {
+  const revealed = revealedImpairmentIds();
+  if (state.impairmentOrder.length === 0) state.impairmentOrder = [...revealed];
+  else state.impairmentOrder = state.impairmentOrder.filter(id => revealed.includes(id)).concat(revealed.filter(id => !state.impairmentOrder.includes(id)));
+  const maxRank = Math.min(3, revealed.length);
+  return `
+    <div class="eyebrow">IMPAIRMENT PRIORITY</div>
+    <h1 class="stage-title">Rank the Impairments You Found</h1>
+    <p class="lede">Only impairments you revealed during the objective exam appear here. Drag to reorder — the top ${maxRank} will carry forward to treatment.</p>
+    <ul class="imp-drag-list" id="impDragList">
+      ${state.impairmentOrder.map((id, idx) => {
+        const imp = IMPAIRMENTS[id];
+        return `<li class="imp-drag-item" draggable="true" data-id="${id}">
+          <span class="imp-rank">${idx < maxRank ? idx+1 : '—'}</span>
+          <div><div class="imp-name">${imp.name}</div><div class="imp-desc">${imp.desc}</div></div>
+        </li>`;
+      }).join('')}
+    </ul>
+    <button class="btn" ${revealed.length === 0 ? 'disabled' : ''} onclick="confirmPriorities()">Continue to Treatment Selection</button>
+  `;
+}
+
+function initDragList() {
+  const list = document.getElementById('impDragList');
+  if (!list) return;
+  let dragEl = null;
+  list.querySelectorAll('.imp-drag-item').forEach(item => {
+    item.addEventListener('dragstart', () => { dragEl = item; item.classList.add('dragging'); });
+    item.addEventListener('dragend', () => { item.classList.remove('dragging'); syncOrderFromDom(); render(); });
+  });
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const after = [...list.querySelectorAll('.imp-drag-item:not(.dragging)')].find(el => e.clientY <= el.getBoundingClientRect().top + el.getBoundingClientRect().height/2);
+    if (!dragEl) return;
+    if (after) list.insertBefore(dragEl, after); else list.appendChild(dragEl);
+  });
+}
+function syncOrderFromDom() {
+  const list = document.getElementById('impDragList');
+  if (!list) return;
+  state.impairmentOrder = [...list.querySelectorAll('.imp-drag-item')].map(el => el.dataset.id);
+}
+function confirmPriorities() {
+  const maxRank = Math.min(3, state.impairmentOrder.length);
+  state.topPriorities = state.impairmentOrder.slice(0, maxRank);
+  goTo(6);
+}
+
+function slotsNeeded(rank) { return rank === 1 ? 2 : (rank === 2 ? 1 : 0); }
+
+function renderTreatment() {
+  const priorities = state.topPriorities || [];
+  return `
+    <div class="eyebrow">TREATMENT — EXERCISE & DOSAGE</div>
+    <h1 class="stage-title">Select Exercises and Prescribe Dosage</h1>
+    <p class="lede">Priority #1 needs 2 exercises, priority #2 needs 1, priority #3 is not addressed this session. For each slot, pick a listed option or write in your own.</p>
+    ${priorities.map((impId, rankIdx) => {
+      const rank = rankIdx + 1;
+      const imp = IMPAIRMENTS[impId];
+      const need = slotsNeeded(rank);
+      if (need === 0) {
+        return `<div class="impairment-block"><h3>Priority #3 — ${imp.name}</h3><div class="priority-tag">Not addressed this session.</div></div>`;
+      }
+      const options = EXERCISES[impId];
+      const slots = state.exerciseSlots[impId] || [];
+      const menuChosenIdxs = slots.filter(s => s.type === 'menu').map(s => s.idx);
+      const hasOther = slots.some(s => s.type === 'other');
+      return `
+        <div class="impairment-block">
+          <h3>Priority #${rank} — ${imp.name}</h3>
+          <div class="priority-tag">Select ${need} exercise${need>1?'s':''} total — from the list, written in, or a mix (${slots.length} / ${need} filled)</div>
+          ${options.map((ex, idx) => `
+            <div class="exercise-card ${menuChosenIdxs.includes(idx) ? 'selected' : ''}" onclick="toggleMenuExercise('${impId}', ${idx}, ${need})">
+              <div><div class="exercise-name">${ex.name}</div><div class="exercise-detail">${ex.detail}</div></div>
+            </div>
+          `).join('')}
+          <div class="slot-note">Don't see a fit? Write in your own exercise for one slot:</div>
+          ${hasOther ? `
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input class="other-input" style="flex:1;" value="${(slots.find(s=>s.type==='other')||{}).text || ''}" oninput="updateOtherExercise('${impId}', this.value)" placeholder="Describe your exercise...">
+              <button class="btn small secondary" onclick="removeOtherExercise('${impId}')">Remove</button>
+            </div>
+          ` : `<button class="btn small secondary" ${slots.length >= need ? 'disabled' : ''} onclick="addOtherExercise('${impId}')">+ Write in an exercise</button>`}
+        </div>
+      `;
+    }).join('')}
+    <div class="panel dim">
+      <label style="font-weight:600; display:block; margin-bottom:10px;">Other interventions (manual therapy, modalities, etc.) — optional</label>
+      <textarea id="otherIntInput" placeholder="Note anything else you'd include this session...">${state.otherInterventions}</textarea>
+    </div>
+    ${renderDosageBlocks(priorities)}
+    <button class="btn" ${!allSlotsFilledAndDosed(priorities) ? 'disabled' : ''} onclick="completeTreatment()">Complete Case</button>
+  `;
+}
+
+function toggleMenuExercise(impId, idx, need) {
+  const slots = state.exerciseSlots[impId] || [];
+  const existingIdx = slots.findIndex(s => s.type === 'menu' && s.idx === idx);
+  if (existingIdx >= 0) { slots.splice(existingIdx, 1); }
+  else if (slots.length < need) { slots.push({ type:'menu', idx }); }
+  state.exerciseSlots[impId] = slots;
+  render();
+}
+function addOtherExercise(impId) {
+  const slots = state.exerciseSlots[impId] || [];
+  slots.push({ type:'other', text:'' });
+  state.exerciseSlots[impId] = slots;
+  render();
+}
+function updateOtherExercise(impId, text) {
+  const slots = state.exerciseSlots[impId] || [];
+  const s = slots.find(x => x.type === 'other');
+  if (s) s.text = text;
+}
+function removeOtherExercise(impId) {
+  state.exerciseSlots[impId] = (state.exerciseSlots[impId] || []).filter(s => s.type !== 'other');
+  render();
+}
+
+function slotLabel(impId, slot) {
+  if (slot.type === 'menu') return EXERCISES[impId][slot.idx].name;
+  return slot.text || '(write-in exercise — not yet named)';
+}
+
+function renderDosageBlocks(priorities) {
+  const filled = priorities.filter(id => (state.exerciseSlots[id]||[]).length > 0);
+  if (filled.length === 0) return '';
+  return `
+    <div class="eyebrow" style="margin-top:8px;">DOSAGE & RATIONALE</div>
+    ${filled.map(impId => (state.exerciseSlots[impId]||[]).map((slot, slotIdx) => {
+      const key = impId + '_' + slotIdx;
+      const d = state.dosage[key] || {};
+      return `
+        <div class="panel">
+          <div style="font-weight:600; margin-bottom:2px;">${slotLabel(impId, slot)}</div>
+          <div style="color:var(--ink-soft); font-size:13px; margin-bottom:12px;">Addressing: ${IMPAIRMENTS[impId].name}</div>
+          <div class="dosage-row">
+            <div class="dosage-field"><label>Sets</label><input type="number" id="sets_${key}" min="1" value="${d.sets||''}" style="width:70px;" oninput="saveDosageField('${key}','sets',this.value)"></div>
+            <div class="dosage-field"><label>Reps</label><input type="number" id="reps_${key}" min="1" value="${d.reps||''}" style="width:70px;" oninput="saveDosageField('${key}','reps',this.value)"></div>
+            <div class="dosage-field"><label>Load type</label>
+              <select id="loadtype_${key}" onchange="saveDosageField('${key}','loadtype',this.value)">
+                <option ${d.loadtype==='Absolute'?'selected':''}>Absolute</option>
+                <option ${d.loadtype==='%1RM'?'selected':''}>%1RM</option>
+                <option ${d.loadtype==='RIR'?'selected':''}>RIR</option>
+                <option ${d.loadtype==='RPE'?'selected':''}>RPE</option>
+              </select>
+            </div>
+            <div class="dosage-field"><label>Load value</label><input type="text" id="loadval_${key}" placeholder="e.g. 3 lb or RPE 6" value="${d.loadval||''}" style="width:120px;" oninput="saveDosageField('${key}','loadval',this.value)"></div>
+          </div>
+          <textarea id="rationale_${key}" placeholder="Why this exercise, at this dosage, for this patient right now?" oninput="saveDosageField('${key}','rationale',this.value)">${d.rationale||''}</textarea>
+        </div>
+      `;
+    }).join('')).join('')}
+  `;
+}
+function saveDosageField(key, field, value) {
+  if (!state.dosage[key]) state.dosage[key] = {};
+  state.dosage[key][field] = value;
+}
+
+function allSlotsFilledAndDosed(priorities) {
+  for (const impId of priorities) {
+    const rank = priorities.indexOf(impId) + 1;
+    const need = slotsNeeded(rank);
+    const slots = state.exerciseSlots[impId] || [];
+    if (slots.length !== need) return false;
+    for (let i = 0; i < slots.length; i++) {
+      const key = impId + '_' + i;
+      const d = state.dosage[key];
+      if (!d || !d.sets || !d.reps || !d.loadval || !d.rationale) return false;
+    }
+  }
+  return true;
+}
+
+function completeTreatment() {
+  const el = document.getElementById('otherIntInput');
+  if (el) state.otherInterventions = el.value;
+  goTo(7);
+}
+
+function tierFeedbackBlock(label, picked, items) {
+  return `
+    <div class="panel">
+      <div style="font-weight:600; margin-bottom:8px;">${label}</div>
+      ${picked.map(id => {
+        const it = items.find(x => x.id === id);
+        return `<div class="feedback-item">${TIER_DOT[it.tier]}<span>${it.name} — <em>${TIER_LABEL[it.tier]}</em></span></div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderSummary() {
+  const priorities = state.topPriorities || [];
+  const idealMatch = priorities.map((id, i) => IDEAL_TOP_IMPAIRMENTS[i] === id);
+  return `
+    <div class="eyebrow">CASE COMPLETE</div>
+    <h1 class="stage-title">Case 1 Summary</h1>
+    <div class="cert-field">
+      <div class="cert-field-label">Group name</div>
+      <input type="text" id="groupNameInput" value="${state.groupName}" placeholder="Enter your group name" oninput="state.groupName = this.value; document.getElementById('certGroupDisplay').textContent = this.value;">
+    </div>
+
+    <h1 class="stage-title" style="font-size:19px;">Subjective &amp; Objective — Choice Quality</h1>
+    <p class="lede">Each item you selected is now revealed as green (strong), yellow (acceptable, not optimal), or red (not well advised).</p>
+    ${tierFeedbackBlock('Subjective Questions', state.subjPicked, SUBJ_QUESTIONS)}
+    ${tierFeedbackBlock('Screening', state.screeningPicked, SCREENING)}
+    ${tierFeedbackBlock('Differential', state.differentialPicked, DIFFERENTIAL)}
+    ${tierFeedbackBlock('Impairment Searching', state.impairmentSearchPicked, IMPSEARCH)}
+
+    <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Impairment Prioritization</h1>
+    <div class="panel">
+      ${priorities.map((id, i) => `<div class="summary-row"><span>Priority #${i+1}</span><span>${IMPAIRMENTS[id].name} ${idealMatch[i] ? '(matches expert ranking)' : ''}</span></div>`).join('') || '<div class="summary-row"><span>No impairments prioritized</span><span>—</span></div>'}
+    </div>
+    <p class="lede">This is shown separately from the tier system above — we'll discuss the reasoning behind impairment ranking together in the debrief.</p>
+
+    <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Exercise Selection &amp; Dosage</h1>
+    <div class="panel">
+      ${priorities.filter(id => (state.exerciseSlots[id]||[]).length > 0).map(impId => (state.exerciseSlots[impId]||[]).map((slot, slotIdx) => {
+        const key = impId + '_' + slotIdx;
+        const d = state.dosage[key] || {};
+        const tierInfo = slot.type === 'menu' ? `${TIER_DOT[EXERCISES[impId][slot.idx].tier]} <em>${TIER_LABEL[EXERCISES[impId][slot.idx].tier]}</em>` : '<em>Custom write-in — discuss in debrief</em>';
+        return `<div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line);">
+          <div style="font-weight:600;">${slotLabel(impId, slot)}</div>
+          <div style="font-size:13px; color:var(--ink-soft); margin-bottom:6px;">For: ${IMPAIRMENTS[impId].name} — ${tierInfo}</div>
+          <div style="font-size:13.5px;">Dosage: ${d.sets||'—'} sets × ${d.reps||'—'} reps, ${d.loadtype||'—'} ${d.loadval||''}</div>
+          <div style="font-size:13.5px; margin-top:4px; color:var(--ink-soft);">${d.rationale||''}</div>
+        </div>`;
+      }).join('')).join('') || '<div>No exercises selected.</div>'}
+      ${state.otherInterventions ? `<div style="margin-top:10px;"><strong>Other interventions:</strong> ${state.otherInterventions}</div>` : ''}
+    </div>
+    <p class="lede">This section is not scored against a tier system — it's the main focus of our large-group debrief.</p>
+
+    <div id="printBar">
+      <button class="btn" onclick="window.print()">Download / Print Certificate</button>
+      <button class="btn secondary" onclick="location.reload()">Restart Case</button>
+    </div>
+    <div style="display:none;"><span id="certGroupDisplay">${state.groupName}</span></div>
+  `;
+}
+
+function saveAndGo(inputId, key, nextStage) { state[key] = document.getElementById(inputId).value; goTo(nextStage); }
+
+render();
+</script>
+</body>
+</html>
