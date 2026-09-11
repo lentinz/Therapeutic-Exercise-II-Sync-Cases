@@ -91,9 +91,10 @@
   .cert-field { margin-bottom: 20px; }
   .cert-field-label { font-weight: 600; font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
   #groupNameInputSummary { font-size: 15px; padding: 8px 10px; width: 320px; }
+  .author-credit { position: fixed; bottom: 10px; right: 14px; font-size: 11px; color: var(--ink-soft); background: var(--paper); padding: 3px 8px; border: 1px solid var(--line); z-index: 20; }
   @media print {
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-    .sidebar, .btn, #printBar { display: none !important; }
+    .sidebar, .btn, #printBar, .cert-field, .author-credit { display: none !important; }
     .app { display: block; }
     .main { padding: 10px; max-width: 100%; }
     .panel { break-inside: avoid; }
@@ -123,8 +124,9 @@
   </nav>
   <main class="main" id="main"></main>
 </div>
+<div class="author-credit">Case author: Zachary Lentini, PT, DPT</div>
 <script>
-const STAGES = ["Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Exercise & Dosage","Case Summary"];
+const STAGES = ["Welcome & Objectives","Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Exercise & Dosage","Case Summary"];
 let current = 0;
 
 const state = {
@@ -260,10 +262,10 @@ function render() {
     html = `<button class="btn secondary small" style="margin-bottom:20px;" onclick="goTo(${current-1})">&larr; Back</button>` + html;
   }
   document.getElementById('main').innerHTML = html;
-  if (current === 5) initDragList();
-  if (current === 0) checkNonEmpty('groupNameInput','introContinueBtn');
-  if (current === 1) checkMinWords('subjOpenInput','subjContinueBtn',10);
-  if (current === 3) checkMinWords('objOpenInput','objContinueBtn',10);
+  if (current === 6) initDragList();
+  if (current === 0) checkWelcomeReady();
+  if (current === 2) checkMinWords('subjOpenInput','subjContinueBtn',10);
+  if (current === 5) checkMinWords('objOpenInput','objContinueBtn',10);
 }
 
 function wordCount(text) {
@@ -276,26 +278,77 @@ function checkMinWords(textareaId, btnId, min) {
   if (!ta || !btn) return;
   btn.disabled = wordCount(ta.value) < min;
 }
-function checkNonEmpty(inputId, btnId) {
-  const el = document.getElementById(inputId);
-  const btn = document.getElementById(btnId);
-  if (!el || !btn) return;
-  btn.disabled = el.value.trim().length === 0;
+function checkWelcomeReady() {
+  const nameEl = document.getElementById('groupNameInput');
+  const ackEl = document.getElementById('ackCheckbox');
+  const btn = document.getElementById('welcomeContinueBtn');
+  if (!nameEl || !ackEl || !btn) return;
+  btn.disabled = !(nameEl.value.trim().length > 0 && ackEl.checked);
 }
 
-const RENDERERS = [renderIntro, renderSubjOpen, renderSubjInterview, renderObjOpen, renderObjExamine, renderImpairments, renderTreatment, renderSummary];
+const RENDERERS = [renderWelcome, renderIntro, renderSubjOpen, renderSubjInterview, renderObjOpen, renderObjExamine, renderImpairments, renderTreatment, renderSummary];
+
+const ACTIVITY_OBJECTIVES = [
+  'Prioritize subjective and objective examination items under a limited-selection constraint that mirrors real clinical time pressure.',
+  'Differentiate higher-yield clinical findings from lower-yield or misleading ones based on the case presentation.',
+  'Rank impairments according to their clinical relevance to the case.',
+  'Prescribe exercise-based interventions, including exercise selection and dosage, that address a prioritized impairment.',
+  'Justify clinical decisions using sound reasoning rather than guesswork, such as citing specific subjective or objective findings.',
+  'Communicate clinical reasoning in an effective manner during small-group and large-group discussion.'
+];
+const CASE_SPECIFIC_OBJECTIVES = []; // optional — add case-specific objectives here when relevant
+
+function renderWelcome() {
+  return `
+    <div class="eyebrow">SIG SYNCHRONOUS SESSION</div>
+    <h1 class="stage-title">Welcome</h1>
+    <p class="lede">Before you begin, review the activity objectives and how this case works, then enter your group's information below.</p>
+
+    <div class="panel">
+      <h3 style="margin-top:0;">Activity Objectives</h3>
+      <ol style="padding-left:20px; margin:0;">
+        ${ACTIVITY_OBJECTIVES.map(o => `<li style="margin-bottom:8px;">${o}</li>`).join('')}
+      </ol>
+      ${CASE_SPECIFIC_OBJECTIVES.length ? `
+        <h3>Case-Specific Objectives</h3>
+        <ol style="padding-left:20px; margin:0;">
+          ${CASE_SPECIFIC_OBJECTIVES.map(o => `<li style="margin-bottom:8px;">${o}</li>`).join('')}
+        </ol>
+      ` : ''}
+    </div>
+
+    <div class="panel dim">
+      <h3 style="margin-top:0;">How This Works</h3>
+      <ul style="padding-left:20px; margin:0;">
+        <li style="margin-bottom:8px;">This case moves through a fixed sequence of stages. Use the sidebar or the "\u2190 Back" button to revisit a stage if your group wants to change an earlier answer.</li>
+        <li style="margin-bottom:8px;">Quality ratings (green/yellow/red) on your choices are hidden until the very end \u2014 you won't get real-time right/wrong feedback as you go. That's intentional: it's meant to make you reason the way you would in practice, not hunt for hints.</li>
+        <li style="margin-bottom:8px;">Some choices lead to dead ends. That's intentional \u2014 it usually means the direction taken wasn't the most clinically appropriate one, and working through why is part of the learning. It won't affect your participation credit.</li>
+        <li style="margin-bottom:8px;">When ranking impairments, drag items to reorder them.</li>
+        <li>Expect this case to take roughly 20\u201330 minutes.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <label style="font-weight:600; display:block; margin-bottom:10px;">Enter the names of everyone in your group (one per line, or separated by commas).</label>
+      <textarea id="groupNameInput" placeholder="e.g. Jane Smith, Alex Lee, Priya Patel" oninput="checkWelcomeReady()">${state.groupName}</textarea>
+      <div class="note">This will appear on your completion certificate at the end of the case.</div>
+      <div style="margin-top:16px; display:flex; gap:10px; align-items:flex-start;">
+        <input type="checkbox" id="ackCheckbox" onclick="checkWelcomeReady()" style="margin-top:3px;">
+        <label for="ackCheckbox" style="font-size:13.5px;">By beginning this case, our group confirms that every member is expected to contribute to the discussion and decisions made throughout, and that each team member will individually submit the resulting Case Completion Record to Canvas for participation credit.</label>
+      </div>
+    </div>
+
+    <button class="btn" id="welcomeContinueBtn" disabled onclick="saveAndGo('groupNameInput','groupName',1)">Begin</button>
+  `;
+}
+
+const CASE_SCENE = "You are a physical therapist performing an initial evaluation in an outpatient orthopedic clinic.";
 
 function renderIntro() {
   return `
-    <div class="eyebrow">BEFORE YOU BEGIN</div>
-    <h1 class="stage-title">Group Members</h1>
-    <div class="panel">
-      <label style="font-weight:600; display:block; margin-bottom:10px;">Enter the names of everyone in your group (one per line, or separated by commas).</label>
-      <textarea id="groupNameInput" placeholder="e.g. Jane Smith, Alex Lee, Priya Patel" oninput="checkNonEmpty('groupNameInput','introContinueBtn')">${state.groupName}</textarea>
-      <div class="note">This will appear on your completion certificate at the end of the case.</div>
-    </div>
     <div class="eyebrow">CASE 1</div>
     <h1 class="stage-title">Right Shoulder Pain</h1>
+    <p class="lede" style="font-style:italic;">${CASE_SCENE}</p>
     <div style="width:100%; height:220px; border:1px dashed var(--line-strong); background:var(--paper-dim); margin-bottom:18px; display:flex; align-items:center; justify-content:center;">
       <span style="color:var(--ink-soft); font-size:13.5px;">Image placeholder — patient / treatment setting</span>
     </div>
@@ -304,7 +357,7 @@ function renderIntro() {
       <p><strong>Presenting complaint:</strong> Right lateral shoulder pain, gradual onset ~4 months ago</p>
       <p><strong>Referral:</strong> Self-referred to outpatient orthopedic physical therapy</p>
     </div>
-    <button class="btn" id="introContinueBtn" disabled onclick="saveAndGo('groupNameInput','groupName',1)">Begin Subjective Interview</button>
+    <button class="btn" onclick="goTo(2)">Begin Subjective Interview</button>
   `;
 }
 
@@ -317,7 +370,7 @@ function renderSubjOpen() {
       <label style="font-weight:600; display:block; margin-bottom:10px;">What are your initial thoughts on this case? What are you curious about or concerned about? (minimum 10 words)</label>
       <textarea id="subjOpenInput" placeholder="Type your reasoning here..." oninput="checkMinWords('subjOpenInput','subjContinueBtn',10)">${state.subjOpen}</textarea>
     </div>
-    <button class="btn" id="subjContinueBtn" disabled onclick="saveAndGo('subjOpenInput','subjOpen',2)">Continue to Interview</button>
+    <button class="btn" id="subjContinueBtn" disabled onclick="saveAndGo('subjOpenInput','subjOpen',3)">Continue to Interview</button>
   `;
 }
 
@@ -341,7 +394,7 @@ function renderSubjInterview() {
         return `<div class="finding"><span class="finding-tag">${q.q}</span>${q.a}</div>`;
       }).join('')}
     </div>
-    <button class="btn" ${picked.length === 0 ? 'disabled' : ''} onclick="goTo(3)">Continue to Objective Exam</button>
+    <button class="btn" ${picked.length === 0 ? 'disabled' : ''} onclick="goTo(4)">Continue to Objective Exam</button>
   `;
 }
 function toggleSubj(id) { toggleInArr(state.subjPicked, id, SUBJ_LIMIT); render(); }
@@ -355,7 +408,7 @@ function renderObjOpen() {
       <label style="font-weight:600; display:block; margin-bottom:10px;">What would you want to test, and what are you hoping to rule in or out? (minimum 10 words)</label>
       <textarea id="objOpenInput" placeholder="Type your reasoning here..." oninput="checkMinWords('objOpenInput','objContinueBtn',10)">${state.objOpen}</textarea>
     </div>
-    <button class="btn" id="objContinueBtn" disabled onclick="saveAndGo('objOpenInput','objOpen',4)">Continue to Exam Selection</button>
+    <button class="btn" id="objContinueBtn" disabled onclick="saveAndGo('objOpenInput','objOpen',5)">Continue to Exam Selection</button>
   `;
 }
 
@@ -395,7 +448,7 @@ function renderObjExamine() {
     ${renderObjCategory('A. Safety and Gross Movement Screening', 'Rule out non-musculoskeletal sources and assess gross movement patterns', SCREENING, state.screeningPicked, SCREEN_LIMIT, 'toggleScreening')}
     ${renderObjCategory('B. Differential Diagnosis Assessments', 'Differentiate between competing shoulder diagnoses', DIFFERENTIAL, state.differentialPicked, DIFF_LIMIT, 'toggleDifferential')}
     ${renderObjCategory('C. Body Structure & Function Measurements', 'Only impairments revealed here will be available to prioritize next', IMPSEARCH, state.impairmentSearchPicked, IMPSEARCH_LIMIT, 'toggleImpSearch')}
-    <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="goTo(5)">Continue to Impairment Priority</button>
+    <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="goTo(6)">Continue to Impairment Priority</button>
   `;
 }
 function toggleScreening(id) { toggleInArr(state.screeningPicked, id, SCREEN_LIMIT); render(); }
@@ -452,7 +505,7 @@ function syncOrderFromDom() {
 function confirmPriorities() {
   const maxRank = Math.min(3, state.impairmentOrder.length);
   state.topPriorities = state.impairmentOrder.slice(0, maxRank);
-  goTo(6);
+  goTo(7);
 }
 
 function slotsNeeded(rank) { return rank === 1 ? 2 : (rank === 2 ? 1 : 0); }
@@ -608,7 +661,7 @@ function allSlotsFilledAndDosed(priorities) {
 function completeTreatment() {
   const el = document.getElementById('otherIntInput');
   if (el) state.otherInterventions = el.value;
-  goTo(7);
+  goTo(8);
 }
 
 function tierFeedbackBlock(label, picked, items) {
