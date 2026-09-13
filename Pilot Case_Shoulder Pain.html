@@ -128,6 +128,7 @@
 <script>
 const STAGES = ["Welcome & Objectives","Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Exercise & Dosage","Case Summary"];
 let current = 0;
+let maxVisited = 0;
 
 const state = {
   groupName: "",
@@ -241,19 +242,35 @@ const EXERCISES = {
 
 const IDEAL_TOP_IMPAIRMENTS = ['i1','i3','i2'];
 
+// Shuffle tiered lists once per page load so tier (green/yellow/red) can never be inferred
+// from display position. Mutates the arrays in place — safe because everything downstream
+// (tier lookups, dosage keys, exercise slot indices) reads from these same array objects.
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+shuffleInPlace(SUBJ_QUESTIONS);
+shuffleInPlace(SCREENING);
+shuffleInPlace(DIFFERENTIAL);
+shuffleInPlace(IMPSEARCH);
+Object.keys(EXERCISES).forEach(k => shuffleInPlace(EXERCISES[k]));
+
+
 function revealedImpairmentIds() {
   return state.impairmentSearchPicked.map(id => IMPSEARCH.find(x => x.id === id).revealsImpairment);
 }
 
 function renderSidebar() {
   document.getElementById('stageList').innerHTML = STAGES.map((s,i) => {
-    let cls = i === current ? 'active' : (i < current ? 'done' : '');
-    const clickable = i <= current && i !== current;
+    let cls = i === current ? 'active' : (i <= maxVisited ? 'done' : '');
+    const clickable = i <= maxVisited && i !== current;
     return `<li class="stage-item ${cls}" ${clickable ? `style="cursor:pointer;" onclick="goTo(${i})"` : ''}>${s}</li>`;
   }).join('');
 }
 
-function goTo(stage) { current = stage; render(); window.scrollTo(0,0); }
+function goTo(stage) { current = stage; if (stage > maxVisited) maxVisited = stage; render(); window.scrollTo(0,0); }
 
 function render() {
   renderSidebar();
