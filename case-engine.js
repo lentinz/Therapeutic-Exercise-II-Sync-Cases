@@ -246,7 +246,7 @@ function renderObjExamine() {
     <h1 class="stage-title">Select Your Tests and Measures</h1>
     <p class="lede">Organized by purpose: rule out other sources, differentiate between competing hypotheses, and search for underlying impairments.</p>
     ${renderObjCategory('A. Safety and Gross Movement Screening', 'Rule out non-musculoskeletal sources and assess gross movement patterns', SCREENING, state.screeningPicked, SCREEN_LIMIT, 'toggleScreening')}
-    ${renderObjCategory('B. Differential Diagnosis Assessments', 'Differentiate between competing shoulder diagnoses', DIFFERENTIAL, state.differentialPicked, DIFF_LIMIT, 'toggleDifferential')}
+    ${renderObjCategory('B. Differential Diagnosis Assessments', 'Differentiate between plausible sources of the presentation', DIFFERENTIAL, state.differentialPicked, DIFF_LIMIT, 'toggleDifferential')}
     ${renderObjCategory('C. Body Structure & Function Measurements', 'Only impairments revealed here will be available to prioritize next', IMPSEARCH, state.impairmentSearchPicked, IMPSEARCH_LIMIT, 'toggleImpSearch')}
     <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="goTo(6)">Continue to Impairment Priority</button>
   `;
@@ -518,7 +518,7 @@ function renderSummary() {
     <div class="panel">
       ${priorities.map((id, i) => `<div class="summary-row"><span>Priority #${i+1}</span><span>${IMPAIRMENTS[id].name} ${isIdealRank(priorities, i) ? '(matches expert ranking)' : ''}</span></div>`).join('') || '<div class="summary-row"><span>No impairments prioritized</span><span>—</span></div>'}
     </div>
-    <p class="lede">This is shown separately from the tier system above — we'll discuss the reasoning behind impairment ranking together in the debrief.</p>
+    <p class="lede">This is shown separately from the tier system above — we'll discuss the reasoning behind impairment ranking together in the debrief.${(typeof IDEAL_RANKING_NOTE !== 'undefined' && IDEAL_RANKING_NOTE) ? ' ' + IDEAL_RANKING_NOTE : ''}</p>
 
     <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Exercise Selection &amp; Dosage</h1>
     <div class="panel">
