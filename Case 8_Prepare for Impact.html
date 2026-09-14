@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="case-styles.css">
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="sidebar-title" id="sidebarTitle"></div>
+    <div class="sidebar-case" id="sidebarCaseTitle"></div>
+    <ul class="stage-list" id="stageList"></ul>
+  </nav>
+  <main class="main" id="main"></main>
+</div>
+<div class="author-credit"></div>
+
+<script>
+// CASE-SPECIFIC DATA ONLY — everything else lives in case-engine.js
+
+const CASE_NUMBER = "Case 8";
+const CASE_TITLE = "Prepare for Impact";
+const CASE_SCENE = "You are a physical therapist performing an outpatient evaluation for a Soldier recently discharged from acute inpatient care, now receiving therapy through the Soldier Recovery Unit at a military treatment facility.";
+const CASE_IMAGE = ""; // leave empty string if no image yet — engine shows a placeholder automatically
+const CASE_IMAGE_ALT = "";
+
+const PATIENT_INFO = [
+  { label: "Patient", value: "25-year-old active-duty Army Ranger, Sergeant" },
+  { label: "Mechanism", value: "Hard landing after a parachute malfunction during a nighttime training jump, approximately 3 weeks ago" },
+  { label: "Injuries", value: "(1) Unstable L1 burst fracture. (2) Right tibial plateau fracture (Schatzker II). Several other minor injuries were also sustained in the fall." },
+  { label: "Prior Management", value: "Underwent urgent posterior spinal fusion (T12\u2013L2) within 48 hours of injury due to fracture instability and concern for neurologic compromise. The knee fracture, stable and non-displaced, has been managed non-operatively in a hinged knee brace." },
+  { label: "Precautions", value: "Bending/lifting/twisting (BLT) spine precautions per neurosurgery. Non-weight-bearing, right lower extremity, until at least 4 weeks post-injury, pending radiographic evidence of healing." },
+  { label: "Setting", value: "Recently discharged from the acute inpatient ward and enrolled in the Soldier Recovery Unit (SRU) at a military treatment facility, now attending scheduled outpatient physical therapy sessions." },
+  { label: "Referral", value: "Co-managed by neurosurgery and orthopedics for outpatient physical therapy." }
+];
+
+const CASE_SPECIFIC_OBJECTIVES = [
+  'Weigh competing clinical priorities across two body regions with differing precaution profiles, and justify a prioritization order in a case where more than one order is defensible.',
+  'Apply weight-bearing and spinal movement precautions appropriately when selecting and dosing therapeutic exercise.'
+];
+
+const SUBJ_QUESTIONS = [
+  { id:'s1', cat:'Mechanism', q:'Can you walk me through what happened during the jump?', a:'Static-line jump from a UH-60 during night training. Reports the canopy did not fully inflate symmetrically. Landed hard and off-axis, right leg absorbing most of the impact before rolling onto the low back rather than completing a full parachute landing fall.', tier:'green' },
+  { id:'s2', cat:'Neuro screen', q:'Any numbness, tingling, or weakness in your legs, or any changes in bladder or bowel control?', a:'Denies any numbness, tingling, or weakness in either leg currently. No bowel or bladder changes since surgery. Reports this was closely monitored throughout the acute hospital stay.', tier:'green' },
+  { id:'s3', cat:'Pain location & quality', q:'Where is your pain right now, and how would you describe it?', a:'Dull, aching pain along the lower back incision, worse with any attempt to bend or twist. Sharp pain in the right knee if he tries to move it beyond what the brace allows.', tier:'green' },
+  { id:'s4', cat:'Aggravating / easing factors', q:'What makes the pain worse, and what helps?', a:'Back pain worsens with sitting upright too long and any bending/twisting motion. Knee pain worsens with any attempted weight-bearing or forced flexion. Both improve with rest in a supported position and prescribed pain medication.', tier:'green' },
+  { id:'s5', cat:'Mobility / assistive device use', q:'How have you been getting around since your injuries?', a:'Using axillary crutches per non-weight-bearing precautions on the right leg. Reports feeling unsteady at times, including a couple of near-falls when maneuvering in tight spaces like doorways.', tier:'green' },
+  { id:'s6', cat:'Sleep quantity', q:'How many hours have you been sleeping per night, on average?', a:'Averaging around 4 to 5 hours per night, and it fluctuates night to night.', tier:'yellow' },
+  { id:'s7', cat:'Return-to-duty goals', q:'What are you hoping to get back to?', a:'Wants to return to full duty with his unit and is worried about missing an upcoming training cycle. Frustrated by how slow progress feels right now.', tier:'yellow' },
+  { id:'s8', cat:'Performance history', q:'What was your last Army Combat Fitness Test score?', a:'Scored well above the passing standard on his last record ACFT, roughly four months ago. Hasn\u2019t thought much about testing given everything else going on.', tier:'red' }
+];
+const SUBJ_LIMIT = 5;
+
+const SCREENING = [
+  { id:'sc1', name:'Bilateral LE neurovascular screen', desc:'Dermatomes, myotomes, reflexes, and distal pulses, both legs', result:'Sensation intact and symmetrical throughout both lower extremities. Myotomes grossly intact where testable within precautions. Reflexes and distal pulses normal and symmetrical bilaterally.', tier:'green' },
+  { id:'sc2', name:'Systemic / red flag screen', desc:'Vitals, surgical-site inspection, signs of infection or DVT', result:'Vitals within normal limits. Both incisions clean, dry, and intact with no signs of infection. No calf pain, swelling, or warmth suggestive of DVT.', tier:'green' },
+  { id:'sc3', name:'Cervical and upper-extremity gross motor screen', desc:'AROM and gross strength/sensation screen, cervical spine and both upper extremities', result:'Full, pain-free cervical AROM. Grossly symmetrical upper-extremity strength and sensation bilaterally. Not clinically implicated by the mechanism or current symptoms, but unremarkable.', tier:'yellow' },
+  { id:'sc4', name:'Double-leg squat assessment', desc:'Observe squat depth and movement quality, both lower extremities', result:'Not appropriate to perform — squatting loads both legs through a full range, which is contraindicated on the right given current non-weight-bearing status.', tier:'red' }
+];
+const SCREEN_LIMIT = 2;
+
+const DIFFERENTIAL = [
+  { id:'d1', name:'Lumbar incision & paraspinal palpation', desc:'Palpate surgical site and surrounding paraspinal musculature', result:'Mild tenderness directly over the incision, expected at this stage. Palpable paraspinal muscle guarding bilaterally, more pronounced on the right.', tier:'green' },
+  { id:'d2', name:'Knee effusion assessment', desc:'Sweep test and joint line palpation, right knee', result:'Moderate effusion present, consistent with expected post-fracture inflammation. Joint line tender to palpation without signs of infection.', tier:'green' },
+  { id:'d3', name:'Patellar mobility & quad tendon reflex', desc:'Assess patellar glide and quadriceps tendon reflex, right knee', result:'Patellar mobility reduced compared to the left, expected given brace wear and reduced activity. Quad tendon reflex intact.', tier:'yellow' },
+  { id:'d4', name:'Standard slump / straight-leg-raise neural tension test', desc:'Full slump or SLR sequence for lumbar neural tension', result:'Not performed — the trunk-flexion component of a standard slump or SLR sequence falls outside current spinal precautions, and the neurovascular screen already completed makes this test unnecessary this visit.', tier:'red' }
+];
+const DIFF_LIMIT = 2;
+
+const IMPSEARCH = [
+  { id:'is1', name:'Trunk activation assessment', desc:'Abdominal drawing-in maneuver with manual palpation of TrA/multifidus activation', revealsImpairment:'i1', result:'Poor, inconsistent activation of the deep abdominal and multifidus muscles during the drawing-in maneuver. Patient substitutes with breath-holding and superficial bracing.', tier:'green' },
+  { id:'is2', name:'Quadriceps activation testing', desc:'Observe and palpate quality of a right quad set compared to the left', revealsImpairment:'i2', result:'Visibly and palpably weaker, incomplete quadriceps contraction on the right compared to a strong, full contraction on the left — consistent with post-traumatic activation inhibition.', tier:'green' },
+  { id:'is3', name:'NWB gait observation with crutches', desc:'Observe ambulation pattern using axillary crutches, non-weight-bearing right LE', revealsImpairment:'i3', result:'Uneven crutch timing, excessive trunk lean toward the involved side, and hesitant weight transfer through the crutches rather than a smooth swing-through pattern.', tier:'green' },
+  { id:'is4', name:'Knee AROM measurement (table)', desc:'Flexion and extension, both knees, within brace-permitted range', revealsImpairment:'i4', isTable:true, tier:'yellow' },
+  { id:'is5', name:'Thoracic spine mobility screen', desc:'Active thoracic extension and rotation, seated', revealsImpairment:'i5', result:'Reduced active thoracic extension and rotation bilaterally, consistent with several weeks of prolonged recumbency and limited upright activity.', tier:'yellow' },
+  { id:'is6', name:'Exertional endurance screen (6-minute walk equivalent)', desc:'Sustained aerobic exertion test', revealsImpairment:'i6', result:'Not appropriate to perform this visit — sustained ambulatory exertion testing is premature given current NWB status and early post-fusion precautions, and carries unnecessary risk before those restrictions progress.', tier:'red' }
+];
+const IMPSEARCH_LIMIT = 3;
+
+const ROM_DATA = [
+  { plane:'Knee flexion', aromR:'40\u00b0 (brace-limited stop)', aromL:'140\u00b0', promR:'Not assessed \u2014 brace precaution', promL:'145\u00b0' },
+  { plane:'Knee extension', aromR:'-5\u00b0 (5\u00b0 extension lag)', aromL:'0\u00b0 (full)', promR:'Not assessed \u2014 brace precaution', promL:'0\u00b0' }
+];
+
+const IMPAIRMENTS = {
+  i1: { name:'Deficient trunk / core neuromuscular control', desc:'Poor, inconsistent transverse abdominis and multifidus activation on the drawing-in maneuver \u2014 relevant to protecting the lumbar fusion during functional activity.' },
+  i2: { name:'Quadriceps activation deficit, right knee', desc:'Weak, incomplete volitional quad contraction relative to the left \u2014 consistent with post-traumatic arthrogenic muscle inhibition.' },
+  i3: { name:'NWB gait / assistive device mechanics deficit', desc:'Uneven, trunk-compensated crutch gait pattern with hesitant weight transfer.' },
+  i4: { name:'Right knee AROM restriction', desc:'Limited flexion and a mild extension lag on the right, within the range currently permitted by the brace and fracture protocol.' },
+  i5: { name:'Reduced thoracic mobility', desc:'Limited active thoracic extension and rotation, consistent with prolonged recumbency and reduced upright tolerance.' },
+  i6: { name:'General deconditioning / reduced exertional tolerance', desc:'Presumed cardiopulmonary and general conditioning decline after several weeks of reduced activity; not formally tested this visit.' }
+};
+
+// Exercise menu per impairment: 4 options each, tiered. Impairments i1-i3 (case-central) skew green;
+// i4-i6 (real but lower priority this visit) skew yellow/red as a natural consequence of over-prioritizing them.
+const EXERCISES = {
+  i1: [
+    { name:'Supine abdominal bracing / drawing-in maneuver with tactile or biofeedback cueing', desc:'Low-load isometric activation of the deep trunk stabilizers, spine kept neutral throughout.', reveal:'Low-load, spine-neutral, and directly retrains the exact activation pattern found to be deficient \u2014 well matched to the finding and to current precautions.', tier:'green' },
+    { name:'Supine marching / heel taps with maintained trunk bracing', desc:'Alternating hip flexion in supine while maintaining a braced, neutral spine position.', reveal:'Progresses the same activation pattern into a functional context (single-limb loading during a brace) without adding trunk flexion or rotation.', tier:'green' },
+    { name:'Quadruped opposite arm/leg reach ("bird dog")', desc:'Quadruped stabilization exercise with contralateral limb movement.', reveal:'A reasonable next-step trunk stabilization exercise, but the quadruped position and transitions in/out of it add more complexity than needed as a starting point this early.', tier:'yellow' },
+    { name:'Full sit-ups / crunches', desc:'Repeated trunk flexion against gravity.', reveal:'Directly violates current bending/lifting/twisting spine precautions this early after fusion \u2014 not appropriate.', tier:'red' }
+  ],
+  i2: [
+    { name:'Quadriceps sets (isometric quad contraction), with NMES if needed', desc:'Isometric quadriceps contraction performed with the knee supported in extension, neuromuscular electrical stimulation added if volitional activation remains poor.', reveal:'Low-load, isometric, and directly targets the activation deficit found on exam \u2014 an appropriate starting point for post-traumatic quad inhibition.', tier:'green' },
+    { name:'Supported straight leg raise (SLR)', desc:'Active SLR performed supine with the knee braced/supported in extension.', reveal:'Reinforces quadriceps activation through a functional range while respecting NWB status, since it is performed supine and does not load the fracture site.', tier:'green' },
+    { name:'Seated short-arc quad extensions within brace-permitted range', desc:'Terminal knee extension performed seated, limited to the range the brace currently allows.', reveal:'A reasonable next progression, but adds active terminal-range loading through the fracture site earlier than needed when isometric work is still yielding gains.', tier:'yellow' },
+    { name:'Loaded knee extension machine or leg press', desc:'Resisted open- or closed-chain knee extension against external load.', reveal:'Too much load through a fracture that is only three weeks out \u2014 inappropriate at this stage regardless of activation quality.', tier:'red' }
+  ],
+  i3: [
+    { name:'NWB crutch gait training on level surfaces', desc:'Structured practice of a non-weight-bearing crutch gait pattern, emphasizing symmetrical timing and trunk control.', reveal:'Directly targets the gait deviations observed on exam using the actual assistive device and surface this patient needs most right now.', tier:'green' },
+    { name:'Bed mobility and transfer training using log-roll technique', desc:'Practice sit-to-stand and supine-to-sit transfers using log-roll principles that respect both NWB and BLT precautions.', reveal:'Addresses a genuine functional safety gap and reinforces spine-safe movement strategy at the same time \u2014 efficient use of the treatment slot.', tier:'green' },
+    { name:'Stair negotiation training with crutches', desc:'NWB stair technique practiced on a short flight with supervision.', reveal:'A reasonable next progression, but more advanced than what this patient needs before level-surface gait and basic transfers are solid.', tier:'yellow' },
+    { name:'Unassisted ambulation trial without crutches', desc:'Brief attempt at walking without assistive devices to "test" tolerance.', reveal:'Directly violates NWB precautions on a fracture that is not cleared for loading \u2014 unsafe.', tier:'red' }
+  ],
+  i4: [
+    { name:'Active-assisted knee flexion/extension (heel slides) within brace-permitted range', desc:'Gentle AAROM performed seated or supine, staying within the range the brace currently allows.', reveal:'A gentle, appropriately dosed option that respects the current protocol while still addressing the restriction.', tier:'green' },
+    { name:'Continuous passive motion (CPM) device use per protocol', desc:'Machine-assisted passive motion through the brace-permitted arc.', reveal:'A reasonable adjunct where available, though more equipment-dependent than manual AAROM as a starting option.', tier:'yellow' },
+    { name:'Patellar mobilization', desc:'Manual mobilization of the patella to support future gliding and ROM gains.', reveal:'Addresses a secondary contributor to the stiffness rather than the restriction itself, and is a lower priority than direct AAROM work this visit.', tier:'yellow' },
+    { name:'Manual overpressure into flexion beyond brace-permitted range', desc:'Clinician-applied overpressure pushing past the current brace stop.', reveal:'Risks disrupting fracture stability at only three weeks out \u2014 contraindicated at this stage.', tier:'red' }
+  ],
+  i5: [
+    { name:'Seated thoracic extension over a towel roll or chair back', desc:'Gentle seated thoracic extension, keeping the lumbar spine neutral throughout.', reveal:'Low-equipment, well-tolerated, and directly targets the mobility deficit without stressing the lumbar fusion or the knee.', tier:'green' },
+    { name:'Seated supported thoracic rotation', desc:'Gentle rotational mobility performed seated with the lumbar spine kept stable.', reveal:'Reasonable and well-tolerated, though a secondary priority to a straightforward extension exercise as the starting option.', tier:'yellow' },
+    { name:'Foam roller thoracic extension mobilization', desc:'Supine thoracic extension performed over a foam roller.', reveal:'Effective long-term, but the supine transitions required add more effort and setup than needed as a starting point given current mobility limitations.', tier:'yellow' },
+    { name:'High-velocity thoracic spine manipulation', desc:'High-velocity, low-amplitude manual thrust technique.', reveal:'Outside the scope of what this finding calls for, and an unnecessary risk directly adjacent to a recent spinal fusion.', tier:'red' }
+  ],
+  i6: [
+    { name:'Seated upper-body ergometer at low, monitored intensity', desc:'Brief, low-intensity arm-crank aerobic activity performed seated, with symptom monitoring.', reveal:'A safe, low-impact way to begin addressing conditioning without loading the spine or the fractured leg.', tier:'green' },
+    { name:'Active range of motion circuit for uninvolved joints', desc:'General AROM circuit for the upper extremities and uninvolved leg, performed seated.', reveal:'A reasonable, low-demand option for general activity, though less targeted to conditioning specifically than monitored aerobic work.', tier:'yellow' },
+    { name:'Brief standing balance/tolerance training at parallel bars', desc:'Short bouts of supported standing to build upright tolerance.', reveal:'A reasonable functional goal, but combines standing demands on the NWB leg with a general-conditioning intent, making it a less clean fit for this specific impairment.', tier:'yellow' },
+    { name:'Unsupervised high-intensity interval training program', desc:'Independent, unsupervised vigorous aerobic conditioning.', reveal:'Unsafe and inappropriate at this stage given current precautions and lack of direct supervision.', tier:'red' }
+  ]
+};
+
+// Co-equal top priorities: trunk control (i1) and quad activation (i2) are both
+// defensible as #1/#2 in either order. Gait (i3) is the single expected #3.
+const IDEAL_TOP_IMPAIRMENTS = ['i1','i2','i3'];
+const IDEAL_ALTERNATE_SETS = [['i2','i1','i3']];
+</script>
+<script src="case-engine.js"></script>
+</body>
+</html>
