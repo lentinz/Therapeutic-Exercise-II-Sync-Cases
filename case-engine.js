@@ -171,10 +171,9 @@ function renderWelcome() {
     <div class="panel dim">
       <h3 style="margin-top:0;">How This Works</h3>
       <ul style="padding-left:20px; margin:0;">
-        <li style="margin-bottom:8px;">This case moves through a fixed sequence of stages. Use the sidebar or the "\u2190 Back" button to revisit a stage if your group wants to change an earlier answer.</li>
+        <li style="margin-bottom:8px;">This case moves through a fixed sequence of stages. Once you continue past a selection stage, those choices lock in \u2014 you can revisit it to review, but not to change it. Your impairment ranking and exercise/dosage choices are the exception and can still be changed anytime before you finish.</li>
         <li style="margin-bottom:8px;">Quality ratings (green/yellow/red) on your choices are hidden until the very end \u2014 you won't get real-time right/wrong feedback as you go. That's intentional: it's meant to make you reason the way you would in practice, not hunt for hints.</li>
-        <li style="margin-bottom:8px;">Some choices lead to dead ends. That's intentional \u2014 it usually means the direction taken wasn't the most clinically appropriate one, and working through why is part of the learning. It won't affect your participation credit.</li>
-        <li style="margin-bottom:8px;">When ranking impairments, drag items to reorder them.</li>
+        <li style="margin-bottom:8px;">A less appropriate choice earlier in the case can affect what's available to you later \u2014 for example, what you choose to test determines which impairments you're able to prioritize afterward. There's no way to go back and add a finding you didn't originally test for.</li>
         <li style="margin-bottom:8px;"><strong>Your progress is automatically saved in this browser as you go.</strong> If you accidentally close or refresh the page, reopening it will offer to resume right where you left off. This only works on the same device and browser, though — switching computers mid-case will lose your progress, so stick with one device for the whole session.</li>
         <li>Expect this case to take roughly 20\u201330 minutes.</li>
       </ul>
