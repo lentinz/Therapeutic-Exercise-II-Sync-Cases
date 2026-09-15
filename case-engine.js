@@ -38,7 +38,7 @@ function shuffleInPlace(arr) {
 }
 shuffleInPlace(SUBJ_QUESTIONS);
 shuffleInPlace(SCREENING);
-shuffleInPlace(DIFFERENTIAL);
+if (typeof DIFFERENTIAL !== 'undefined') shuffleInPlace(DIFFERENTIAL);
 shuffleInPlace(IMPSEARCH);
 Object.keys(EXERCISES).forEach(k => shuffleInPlace(EXERCISES[k]));
 
@@ -241,13 +241,20 @@ function renderObjCategory(title, sub, items, picked, limit, toggleFn) {
 }
 
 function renderObjExamine() {
+  const hasDifferential = typeof DIFFERENTIAL !== 'undefined' && DIFFERENTIAL.length > 0;
+  const categories = [
+    { title: 'Safety and Gross Movement Screening', sub: 'Rule out non-musculoskeletal sources and assess gross movement patterns', items: SCREENING, picked: state.screeningPicked, limit: SCREEN_LIMIT, toggleFn: 'toggleScreening' }
+  ];
+  if (hasDifferential) {
+    categories.push({ title: 'Differential Diagnosis Assessments', sub: 'Differentiate between plausible sources of the presentation', items: DIFFERENTIAL, picked: state.differentialPicked, limit: DIFF_LIMIT, toggleFn: 'toggleDifferential' });
+  }
+  categories.push({ title: 'Body Structure & Function Measurements', sub: 'Only impairments revealed here will be available to prioritize next', items: IMPSEARCH, picked: state.impairmentSearchPicked, limit: IMPSEARCH_LIMIT, toggleFn: 'toggleImpSearch' });
+
   return `
     <div class="eyebrow">OBJECTIVE — EXAMINE</div>
     <h1 class="stage-title">Select Your Tests and Measures</h1>
-    <p class="lede">Organized by purpose: rule out other sources, differentiate between competing hypotheses, and search for underlying impairments.</p>
-    ${renderObjCategory('A. Safety and Gross Movement Screening', 'Rule out non-musculoskeletal sources and assess gross movement patterns', SCREENING, state.screeningPicked, SCREEN_LIMIT, 'toggleScreening')}
-    ${renderObjCategory('B. Differential Diagnosis Assessments', 'Differentiate between plausible sources of the presentation', DIFFERENTIAL, state.differentialPicked, DIFF_LIMIT, 'toggleDifferential')}
-    ${renderObjCategory('C. Body Structure & Function Measurements', 'Only impairments revealed here will be available to prioritize next', IMPSEARCH, state.impairmentSearchPicked, IMPSEARCH_LIMIT, 'toggleImpSearch')}
+    <p class="lede">Organized by purpose: rule out other sources${hasDifferential ? ', differentiate between competing hypotheses,' : ''} and search for underlying impairments.</p>
+    ${categories.map((c, i) => renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn)).join('')}
     <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="goTo(6)">Continue to Impairment Priority</button>
   `;
 }
@@ -264,7 +271,7 @@ function renderImpairments() {
   const revealed = revealedImpairmentIds();
   if (state.impairmentOrder.length === 0) state.impairmentOrder = [...revealed];
   else state.impairmentOrder = state.impairmentOrder.filter(id => revealed.includes(id)).concat(revealed.filter(id => !state.impairmentOrder.includes(id)));
-  const maxRank = Math.min(3, revealed.length);
+  const maxRank = Math.min((typeof RANK_LIMIT !== 'undefined') ? RANK_LIMIT : 3, revealed.length);
   return `
     <div class="eyebrow">IMPAIRMENT PRIORITY</div>
     <h1 class="stage-title">Rank the Impairments You Found</h1>
@@ -303,25 +310,41 @@ function syncOrderFromDom() {
   state.impairmentOrder = [...list.querySelectorAll('.imp-drag-item')].map(el => el.dataset.id);
 }
 function confirmPriorities() {
-  const maxRank = Math.min(3, state.impairmentOrder.length);
+  const maxRank = Math.min((typeof RANK_LIMIT !== 'undefined') ? RANK_LIMIT : 3, state.impairmentOrder.length);
   state.topPriorities = state.impairmentOrder.slice(0, maxRank);
   goTo(7);
 }
 
-function slotsNeeded(rank) { return rank === 1 ? 2 : (rank === 2 ? 1 : 0); }
+function slotsNeeded(rank) {
+  const plan = (typeof SLOT_PLAN !== 'undefined') ? SLOT_PLAN : [2, 1];
+  return plan[rank - 1] || 0;
+}
+
+function slotPlanSentence() {
+  const plan = (typeof SLOT_PLAN !== 'undefined') ? SLOT_PLAN : [2, 1];
+  const limit = (typeof RANK_LIMIT !== 'undefined') ? RANK_LIMIT : 3;
+  const parts = [];
+  for (let r = 1; r <= limit; r++) {
+    const need = plan[r - 1] || 0;
+    parts.push(need === 0
+      ? `priority #${r} is not addressed this session`
+      : `priority #${r} needs ${need} exercise${need > 1 ? 's' : ''}`);
+  }
+  return parts.join(', ') + '.';
+}
 
 function renderTreatment() {
   const priorities = state.topPriorities || [];
   return `
     <div class="eyebrow">TREATMENT — EXERCISE & DOSAGE</div>
     <h1 class="stage-title">Select Exercises and Prescribe Dosage</h1>
-    <p class="lede">Priority #1 needs 2 exercises, priority #2 needs 1, priority #3 is not addressed this session. For each slot, pick a listed option or write in your own.</p>
+    <p class="lede">${slotPlanSentence()} For each slot, pick a listed option or write in your own.</p>
     ${priorities.map((impId, rankIdx) => {
       const rank = rankIdx + 1;
       const imp = IMPAIRMENTS[impId];
       const need = slotsNeeded(rank);
       if (need === 0) {
-        return `<div class="impairment-block"><h3>Priority #3 — ${imp.name}</h3><div class="priority-tag">Not addressed this session.</div></div>`;
+        return `<div class="impairment-block"><h3>Priority #${rank} — ${imp.name}</h3><div class="priority-tag">Not addressed this session.</div></div>`;
       }
       const options = EXERCISES[impId];
       const slots = state.exerciseSlots[impId] || [];
@@ -477,12 +500,6 @@ function tierFeedbackBlock(label, picked, items) {
   `;
 }
 
-function isIdealRank(priorities, i) {
-  const alt = (typeof IDEAL_ALTERNATE_SETS !== 'undefined') ? IDEAL_ALTERNATE_SETS : [];
-  const sets = [IDEAL_TOP_IMPAIRMENTS, ...alt];
-  return sets.some(set => set[i] === priorities[i]);
-}
-
 function renderSummary() {
   const priorities = state.topPriorities || [];
   const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -511,14 +528,19 @@ function renderSummary() {
     <p class="lede">Each item you selected is now revealed as green (strong), yellow (acceptable, not optimal), or red (not well advised).</p>
     ${tierFeedbackBlock('Subjective Questions', state.subjPicked, SUBJ_QUESTIONS)}
     ${tierFeedbackBlock('Safety and Gross Movement Screening', state.screeningPicked, SCREENING)}
-    ${tierFeedbackBlock('Differential Diagnosis Assessments', state.differentialPicked, DIFFERENTIAL)}
+    ${(typeof DIFFERENTIAL !== 'undefined' && DIFFERENTIAL.length > 0) ? tierFeedbackBlock('Differential Diagnosis Assessments', state.differentialPicked, DIFFERENTIAL) : ''}
     ${tierFeedbackBlock('Body Structure & Function Measurements', state.impairmentSearchPicked, IMPSEARCH)}
 
     <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Impairment Prioritization</h1>
     <div class="panel">
-      ${priorities.map((id, i) => `<div class="summary-row"><span>Priority #${i+1}</span><span>${IMPAIRMENTS[id].name} ${isIdealRank(priorities, i) ? '(matches expert ranking)' : ''}</span></div>`).join('') || '<div class="summary-row"><span>No impairments prioritized</span><span>—</span></div>'}
+      ${priorities.map((id, i) => {
+        const imp = IMPAIRMENTS[id];
+        const dot = imp.tier ? TIER_DOT[imp.tier] : '';
+        const tierLabel = imp.tier ? ` — <em>${TIER_LABEL[imp.tier]}</em>` : '';
+        return `<div class="feedback-item">${dot}<span><strong>Priority #${i+1}:</strong> ${imp.name}${tierLabel}</span></div>`;
+      }).join('') || '<div class="summary-row"><span>No impairments prioritized</span><span>—</span></div>'}
     </div>
-    <p class="lede">This is shown separately from the tier system above — we'll discuss the reasoning behind impairment ranking together in the debrief.${(typeof IDEAL_RANKING_NOTE !== 'undefined' && IDEAL_RANKING_NOTE) ? ' ' + IDEAL_RANKING_NOTE : ''}</p>
+    <p class="lede">Tiers for your prioritized impairments are shown here for reference — we'll discuss the reasoning behind your ranking together in the debrief.</p>
 
     <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Exercise Selection &amp; Dosage</h1>
     <div class="panel">
