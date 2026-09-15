@@ -86,12 +86,12 @@ const ROM_DATA = [
 ];
 
 const IMPAIRMENTS = {
-  i1: { name:'Reduced force production — resisted abduction / external rotation', desc:'Right-sided weakness relative to the left on manual muscle testing.' },
-  i2: { name:'Internal rotation ROM asymmetry', desc:'Measured IR deficit compared to the uninvolved side; cause not yet determined.' },
-  i3: { name:'Altered scapular motion during elevation', desc:'Early elevation and mild winging observed past 90° of arm elevation.' },
-  i4: { name:'Reduced cross-body adduction ROM', desc:'Approximately 20° less than the uninvolved side; contributing structure not yet determined.' },
-  i5: { name:'Reduced thoracic extension mobility', desc:'Limited active thoracic extension with lumbar substitution.' },
-  i6: { name:'Movement avoidance / guarding with overhead tasks', desc:'Observed hesitancy and self-reported avoidance of overhead reaching.' }
+  i1: { name:'Reduced force production — resisted abduction / external rotation', desc:'Right-sided weakness relative to the left on manual muscle testing.', tier:'green' },
+  i2: { name:'Internal rotation ROM asymmetry', desc:'Measured IR deficit compared to the uninvolved side; cause not yet determined.', tier:'green' },
+  i3: { name:'Altered scapular motion during elevation', desc:'Early elevation and mild winging observed past 90° of arm elevation.', tier:'green' },
+  i4: { name:'Reduced cross-body adduction ROM', desc:'Approximately 20° less than the uninvolved side; contributing structure not yet determined.', tier:'yellow' },
+  i5: { name:'Reduced thoracic extension mobility', desc:'Limited active thoracic extension with lumbar substitution.', tier:'yellow' },
+  i6: { name:'Movement avoidance / guarding with overhead tasks', desc:'Observed hesitancy and self-reported avoidance of overhead reaching.', tier:'red' }
 };
 
 // Exercise menu per impairment: 4 options each, tiered. Impairments i1-i3 (case-central) skew green;
@@ -135,7 +135,6 @@ const EXERCISES = {
   ]
 };
 
-const IDEAL_TOP_IMPAIRMENTS = ['i1','i3','i2'];
 </script>
 <script src="case-engine.js"></script>
 </body>
