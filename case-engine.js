@@ -18,7 +18,9 @@ let maxVisited = 0;
 
 const state = {
   groupName: "",
+  subjOpenLocked: false,
   subjLocked: false,
+  objOpenLocked: false,
   objLocked: false,
   subjOpen: "", subjPicked: [],
   objOpen: "",
@@ -164,15 +166,17 @@ function renderIntro() {
 }
 
 function renderSubjOpen() {
+  const locked = state.subjOpenLocked;
   return `
     <div class="eyebrow">SUBJECTIVE — REFLECT</div>
     <h1 class="stage-title">Initial Thoughts</h1>
     <p class="lede">Before interviewing the patient, consider what you already know from the case introduction.</p>
     <div class="panel">
       <label style="font-weight:600; display:block; margin-bottom:10px;">What are your initial thoughts on this case? What are you curious about or concerned about? (minimum 10 words)</label>
-      <textarea id="subjOpenInput" placeholder="Type your reasoning here..." oninput="checkMinWords('subjOpenInput','subjContinueBtn',10)">${state.subjOpen}</textarea>
+      <textarea id="subjOpenInput" placeholder="Type your reasoning here..." ${locked ? 'readonly' : ''} oninput="checkMinWords('subjOpenInput','subjContinueBtn',10)">${state.subjOpen}</textarea>
     </div>
-    <button class="btn" id="subjContinueBtn" disabled onclick="saveAndGo('subjOpenInput','subjOpen',3)">Continue to Interview</button>
+    <button class="btn" id="subjContinueBtn" disabled onclick="state.subjOpenLocked = true; saveAndGo('subjOpenInput','subjOpen',3);">Continue to Interview</button>
+    <div class="note">${locked ? 'Your response is locked in.' : "You won't be able to change your answer once you move on to the next page."}</div>
   `;
 }
 
@@ -202,20 +206,23 @@ function renderSubjInterview() {
       }).join('')}
     </div>
     <button class="btn" ${picked.length === 0 ? 'disabled' : ''} onclick="state.subjLocked = true; goTo(4);">Continue to Objective Exam</button>
+    <div class="note">${state.subjLocked ? 'Your selections are locked in.' : "You won't be able to change your selections once you move on to the next page."}</div>
   `;
 }
 function toggleSubj(id) { toggleInArr(state.subjPicked, id, SUBJ_LIMIT); render(); }
 
 function renderObjOpen() {
+  const locked = state.objOpenLocked;
   return `
     <div class="eyebrow">OBJECTIVE — REFLECT</div>
     <h1 class="stage-title">What Would You Test?</h1>
     <p class="lede">Based on the subjective findings so far, what do you want to examine and why?</p>
     <div class="panel">
       <label style="font-weight:600; display:block; margin-bottom:10px;">What would you want to test, and what are you hoping to rule in or out? (minimum 10 words)</label>
-      <textarea id="objOpenInput" placeholder="Type your reasoning here..." oninput="checkMinWords('objOpenInput','objContinueBtn',10)">${state.objOpen}</textarea>
+      <textarea id="objOpenInput" placeholder="Type your reasoning here..." ${locked ? 'readonly' : ''} oninput="checkMinWords('objOpenInput','objContinueBtn',10)">${state.objOpen}</textarea>
     </div>
-    <button class="btn" id="objContinueBtn" disabled onclick="saveAndGo('objOpenInput','objOpen',5)">Continue to Exam Selection</button>
+    <button class="btn" id="objContinueBtn" disabled onclick="state.objOpenLocked = true; saveAndGo('objOpenInput','objOpen',5);">Continue to Exam Selection</button>
+    <div class="note">${locked ? 'Your response is locked in.' : "You won't be able to change your answer once you move on to the next page."}</div>
   `;
 }
 
@@ -268,6 +275,7 @@ function renderObjExamine() {
     <p class="lede">Organized by purpose: rule out other sources${hasDifferential ? ', differentiate between competing hypotheses,' : ''} and search for underlying impairments.${locked ? ' Your selections are locked in and shown read-only below.' : ' Once selected, an item is locked in — choose carefully.'}</p>
     ${categories.map((c, i) => renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn, locked)).join('')}
     <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="state.objLocked = true; goTo(6);">Continue to Impairment Priority</button>
+    <div class="note">${state.objLocked ? 'Your selections are locked in.' : "You won't be able to change your selections once you move on to the next page."}</div>
   `;
 }
 function toggleScreening(id) { toggleInArr(state.screeningPicked, id, SCREEN_LIMIT); render(); }
