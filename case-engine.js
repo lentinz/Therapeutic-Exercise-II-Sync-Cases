@@ -10,6 +10,51 @@
 // ============================================================
 
 const COURSE_TITLE = "DPHT 7250: THERAPEUTIC EXERCISE II";
+const STORAGE_KEY = 'caseProgress::' + CASE_NUMBER + '::' + CASE_TITLE;
+
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, current, maxVisited }));
+  } catch (e) { /* storage unavailable or full — fail silently, not critical */ }
+}
+function loadSavedProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function clearSavedProgress() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+}
+function resumeSavedProgress() {
+  const saved = loadSavedProgress();
+  if (saved) {
+    Object.assign(state, saved.state);
+    current = saved.current;
+    maxVisited = saved.maxVisited;
+  }
+  initShell();
+  render();
+}
+function discardSavedProgressAndStart() {
+  clearSavedProgress();
+  current = 0; maxVisited = 0;
+  initShell();
+  render();
+}
+function renderResumePrompt() {
+  initShell();
+  document.getElementById('main').innerHTML = `
+    <div class="eyebrow">WELCOME BACK</div>
+    <h1 class="stage-title">Resume Your Progress?</h1>
+    <p class="lede">This browser has saved progress for this case, likely from a session that got interrupted.</p>
+    <div class="panel">
+      <button class="btn" onclick="resumeSavedProgress()">Resume where I left off</button>
+      <button class="btn secondary" style="margin-left:10px;" onclick="discardSavedProgressAndStart()">Start fresh</button>
+    </div>
+  `;
+}
+
 const AUTHOR_CREDIT = "Case author: Zachary Lentini, PT, DPT";
 
 const STAGES = ["Welcome & Objectives","Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Exercise & Dosage","Case Summary"];
@@ -72,6 +117,7 @@ function render() {
   if (current === 0) checkWelcomeReady();
   if (current === 2) checkMinWords('subjOpenInput','subjContinueBtn',10);
   if (current === 5) checkMinWords('objOpenInput','objContinueBtn',10);
+  saveProgress();
 }
 
 function wordCount(text) {
@@ -129,14 +175,14 @@ function renderWelcome() {
         <li style="margin-bottom:8px;">Quality ratings (green/yellow/red) on your choices are hidden until the very end \u2014 you won't get real-time right/wrong feedback as you go. That's intentional: it's meant to make you reason the way you would in practice, not hunt for hints.</li>
         <li style="margin-bottom:8px;">Some choices lead to dead ends. That's intentional \u2014 it usually means the direction taken wasn't the most clinically appropriate one, and working through why is part of the learning. It won't affect your participation credit.</li>
         <li style="margin-bottom:8px;">When ranking impairments, drag items to reorder them.</li>
-        <li style="margin-bottom:8px;"><strong>Closing or refreshing this page will erase all of your group's progress.</strong> Nothing is saved automatically — stay on this tab until you've downloaded your completion certificate at the end.</li>
+        <li style="margin-bottom:8px;"><strong>Your progress is automatically saved in this browser as you go.</strong> If you accidentally close or refresh the page, reopening it will offer to resume right where you left off. This only works on the same device and browser, though — switching computers mid-case will lose your progress, so stick with one device for the whole session.</li>
         <li>Expect this case to take roughly 20\u201330 minutes.</li>
       </ul>
     </div>
 
     <div class="panel">
       <label style="font-weight:600; display:block; margin-bottom:10px;">Enter the names of everyone in your group (one per line, or separated by commas).</label>
-      <textarea id="groupNameInput" placeholder="e.g. Jane Smith, Alex Lee, Priya Patel" oninput="checkWelcomeReady()">${state.groupName}</textarea>
+      <textarea id="groupNameInput" placeholder="e.g. Jane Smith, Alex Lee, Priya Patel" oninput="state.groupName = this.value; checkWelcomeReady(); saveProgress();">${state.groupName}</textarea>
       <div class="note">This will appear on your completion certificate at the end of the case.</div>
       <div style="margin-top:16px; display:flex; gap:10px; align-items:flex-start;">
         <input type="checkbox" id="ackCheckbox" onclick="checkWelcomeReady()" style="margin-top:3px;">
@@ -173,7 +219,7 @@ function renderSubjOpen() {
     <p class="lede">Before interviewing the patient, consider what you already know from the case introduction.</p>
     <div class="panel">
       <label style="font-weight:600; display:block; margin-bottom:10px;">What are your initial thoughts on this case? What are you curious about or concerned about? (minimum 10 words)</label>
-      <textarea id="subjOpenInput" placeholder="Type your reasoning here..." ${locked ? 'readonly' : ''} oninput="checkMinWords('subjOpenInput','subjContinueBtn',10)">${state.subjOpen}</textarea>
+      <textarea id="subjOpenInput" placeholder="Type your reasoning here..." ${locked ? 'readonly' : ''} oninput="state.subjOpen = this.value; checkMinWords('subjOpenInput','subjContinueBtn',10); saveProgress();">${state.subjOpen}</textarea>
     </div>
     <button class="btn" id="subjContinueBtn" disabled onclick="state.subjOpenLocked = true; saveAndGo('subjOpenInput','subjOpen',3);">Continue to Interview</button>
     <div class="note">${locked ? 'Your response is locked in.' : "You won't be able to change your answer once you move on to the next page."}</div>
@@ -219,7 +265,7 @@ function renderObjOpen() {
     <p class="lede">Based on the subjective findings so far, what do you want to examine and why?</p>
     <div class="panel">
       <label style="font-weight:600; display:block; margin-bottom:10px;">What would you want to test, and what are you hoping to rule in or out? (minimum 10 words)</label>
-      <textarea id="objOpenInput" placeholder="Type your reasoning here..." ${locked ? 'readonly' : ''} oninput="checkMinWords('objOpenInput','objContinueBtn',10)">${state.objOpen}</textarea>
+      <textarea id="objOpenInput" placeholder="Type your reasoning here..." ${locked ? 'readonly' : ''} oninput="state.objOpen = this.value; checkMinWords('objOpenInput','objContinueBtn',10); saveProgress();">${state.objOpen}</textarea>
     </div>
     <button class="btn" id="objContinueBtn" disabled onclick="state.objOpenLocked = true; saveAndGo('objOpenInput','objOpen',5);">Continue to Exam Selection</button>
     <div class="note">${locked ? 'Your response is locked in.' : "You won't be able to change your answer once you move on to the next page."}</div>
@@ -394,7 +440,7 @@ function renderTreatment() {
     }).join('')}
     <div class="panel dim">
       <label style="font-weight:600; display:block; margin-bottom:10px;">Other interventions (manual therapy, modalities, etc.) — optional</label>
-      <textarea id="otherIntInput" placeholder="Note anything else you'd include this session...">${state.otherInterventions}</textarea>
+      <textarea id="otherIntInput" placeholder="Note anything else you'd include this session..." oninput="state.otherInterventions = this.value; saveProgress();">${state.otherInterventions}</textarea>
     </div>
     ${renderDosageBlocks(priorities)}
     <button class="btn" id="completeCaseBtn" ${!allSlotsFilledAndDosed(priorities) ? 'disabled' : ''} onclick="completeTreatment()">Complete Case</button>
@@ -479,6 +525,7 @@ function saveDosageField(key, field, value) {
   if (!state.dosage[key]) state.dosage[key] = {};
   state.dosage[key][field] = value;
   updateCompleteBtn();
+  saveProgress();
 }
 function updateCompleteBtn() {
   const btn = document.getElementById('completeCaseBtn');
@@ -541,7 +588,7 @@ function renderSummary() {
 
     <div class="cert-field">
       <div class="cert-field-label">Edit group members (updates the record above)</div>
-      <input type="text" id="groupNameInputSummary" value="${state.groupName}" placeholder="Enter group member names" oninput="state.groupName = this.value; document.getElementById('certGroupNameLive').textContent = this.value || '\u2014';">
+      <input type="text" id="groupNameInputSummary" value="${state.groupName}" placeholder="Enter group member names" oninput="state.groupName = this.value; document.getElementById('certGroupNameLive').textContent = this.value || '\u2014'; saveProgress();">
     </div>
 
     <h1 class="stage-title" style="font-size:19px;">Subjective &amp; Objective — Choice Quality</h1>
@@ -582,7 +629,7 @@ function renderSummary() {
     <p class="lede">This section is not scored against a tier system — it's the main focus of our large-group debrief.</p>
 
     <div id="printBar">
-      <button class="btn" onclick="window.print()">Download / Print Certificate</button>
+      <button class="btn" onclick="clearSavedProgress(); window.print();">Download / Print Certificate</button>
       <button class="btn secondary" onclick="location.reload()">Restart Case</button>
     </div>
   `;
@@ -596,5 +643,62 @@ function initShell() {
   document.title = CASE_NUMBER + ': ' + CASE_TITLE;
 }
 
-initShell();
-render();
+function bootCase() {
+  if (loadSavedProgress()) {
+    renderResumePrompt();
+  } else {
+    initShell();
+    render();
+  }
+}
+
+const PASSWORD_STORAGE_KEY = 'casePasswordOK::' + CASE_NUMBER + '::' + CASE_TITLE;
+
+function passwordGateRequired() {
+  return typeof CASE_PASSWORD !== 'undefined' && CASE_PASSWORD;
+}
+function passwordAlreadyUnlocked() {
+  try { return sessionStorage.getItem(PASSWORD_STORAGE_KEY) === 'ok'; } catch (e) { return false; }
+}
+function renderPasswordGate(showError) {
+  document.title = CASE_NUMBER + ': Access Required';
+  document.body.innerHTML = `
+    <div style="max-width:420px; margin:80px auto; padding:0 20px;">
+      <div class="eyebrow">${CASE_NUMBER}</div>
+      <h1 class="stage-title">Enter Access Code</h1>
+      <p class="lede">Ask your instructor for this session's access code.</p>
+      <div class="panel">
+        <input type="password" id="casePasswordInput" placeholder="Access code" style="font-size:15px; padding:10px 12px; width:100%; box-sizing:border-box; border:1px solid var(--line);" onkeydown="if(event.key==='Enter') attemptPasswordUnlock();">
+        <button class="btn" style="margin-top:12px;" onclick="attemptPasswordUnlock()">Unlock</button>
+        ${showError ? '<div class="note" style="color:var(--red); margin-top:10px;">Incorrect code — try again.</div>' : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('casePasswordInput').focus();
+}
+function attemptPasswordUnlock() {
+  const val = document.getElementById('casePasswordInput').value;
+  if (val === CASE_PASSWORD) {
+    try { sessionStorage.setItem(PASSWORD_STORAGE_KEY, 'ok'); } catch (e) { /* ignore */ }
+    document.body.innerHTML = `
+      <div class="app">
+        <nav class="sidebar">
+          <div class="sidebar-title" id="sidebarTitle"></div>
+          <div class="sidebar-case" id="sidebarCaseTitle"></div>
+          <ul class="stage-list" id="stageList"></ul>
+        </nav>
+        <main class="main" id="main"></main>
+      </div>
+      <div class="author-credit"></div>
+    `;
+    bootCase();
+  } else {
+    renderPasswordGate(true);
+  }
+}
+
+if (passwordGateRequired() && !passwordAlreadyUnlocked()) {
+  renderPasswordGate(false);
+} else {
+  bootCase();
+}
