@@ -63,23 +63,17 @@ const SCREENING = [
 ];
 const SCREEN_LIMIT = 2;
 
-const DIFFERENTIAL = [
-  { id:'d1', name:'Lumbar incision & paraspinal palpation', desc:'Palpate surgical site and surrounding paraspinal musculature', result:'Mild tenderness directly over the incision, expected at this stage. Palpable paraspinal muscle guarding bilaterally, more pronounced on the right.', tier:'green' },
-  { id:'d2', name:'Knee effusion assessment', desc:'Sweep test and joint line palpation, right knee', result:'Moderate effusion present, consistent with expected post-fracture inflammation. Joint line tender to palpation without signs of infection.', tier:'green' },
-  { id:'d3', name:'Patellar mobility & quad tendon reflex', desc:'Assess patellar glide and quadriceps tendon reflex, right knee', result:'Patellar mobility reduced compared to the left, expected given brace wear and reduced activity. Quad tendon reflex intact.', tier:'yellow' },
-  { id:'d4', name:'Standard slump / straight-leg-raise neural tension test', desc:'Full slump or SLR sequence for lumbar neural tension', result:'Not performed — the trunk-flexion component of a standard slump or SLR sequence falls outside current spinal precautions, and the neurovascular screen already completed makes this test unnecessary this visit.', tier:'red' }
-];
-const DIFF_LIMIT = 2;
-
 const IMPSEARCH = [
   { id:'is1', name:'Trunk activation assessment', desc:'Abdominal drawing-in maneuver with manual palpation of TrA/multifidus activation', revealsImpairment:'i1', result:'Poor, inconsistent activation of the deep abdominal and multifidus muscles during the drawing-in maneuver. Patient substitutes with breath-holding and superficial bracing.', tier:'green' },
   { id:'is2', name:'Quadriceps activation testing', desc:'Observe and palpate quality of a right quad set compared to the left', revealsImpairment:'i2', result:'Visibly and palpably weaker, incomplete quadriceps contraction on the right compared to a strong, full contraction on the left — consistent with post-traumatic activation inhibition.', tier:'green' },
+  { id:'is7', name:'Observation of bed mobility / transfers', desc:'Observe technique and safety during supine-to-sit and sit-to-stand transfers', revealsImpairment:'i7', result:'Uses a cautious, modified log-roll technique but demonstrates inconsistent bracing and occasional breath-holding during sit-to-stand transfers; some difficulty coordinating the transfer with the NWB leg.', tier:'green' },
   { id:'is3', name:'NWB gait observation with crutches', desc:'Observe ambulation pattern using axillary crutches, non-weight-bearing right LE', revealsImpairment:'i3', result:'Uneven crutch timing, excessive trunk lean toward the involved side, and hesitant weight transfer through the crutches rather than a smooth swing-through pattern.', tier:'green' },
-  { id:'is4', name:'Knee AROM measurement (table)', desc:'Flexion and extension, both knees, within brace-permitted range', revealsImpairment:'i4', isTable:true, tier:'yellow' },
-  { id:'is5', name:'Thoracic spine mobility screen', desc:'Active thoracic extension and rotation, seated', revealsImpairment:'i5', result:'Reduced active thoracic extension and rotation bilaterally, consistent with several weeks of prolonged recumbency and limited upright activity.', tier:'yellow' },
-  { id:'is6', name:'Exertional endurance screen (6-minute walk equivalent)', desc:'Sustained aerobic exertion test', revealsImpairment:'i6', result:'Not appropriate to perform this visit — sustained ambulatory exertion testing is premature given current NWB status and early post-fusion precautions, and carries unnecessary risk before those restrictions progress.', tier:'red' }
+  { id:'is4', name:'Knee AROM measurement (table)', desc:'Flexion and extension, both knees, within brace-permitted range', revealsImpairment:'i4', isTable:true, tier:'green' },
+  { id:'is8', name:'Thigh circumference measurement (bilateral)', desc:'Circumference measured at a standardized level above the patella, both legs', revealsImpairment:'i8', result:'Right thigh circumference measured 1.25 cm smaller than the left at a standardized level above the patella, consistent with disuse atrophy.', tier:'yellow' },
+  { id:'is5', name:'Seated thoracic AROM assessment', desc:'Active thoracic flexion, extension, side-bending (R/L), and rotation (R/L), seated', revealsImpairment:'i5', result:'Mildly reduced active thoracic flexion, extension, side-bending (R/L), and rotation (R/L), most notable in extension and rotation — consistent with prolonged recumbency.', tier:'yellow' },
+  { id:'is9', name:'Standing lumbar AROM, all directions, with overpressure', desc:'Active flexion, extension, side-bending, and rotation, standing, with manual overpressure', revealsImpairment:'i9', result:'Not appropriate to perform — loads the fusion beyond current BLT precautions and the right leg beyond NWB status simultaneously.', tier:'red' }
 ];
-const IMPSEARCH_LIMIT = 3;
+const IMPSEARCH_LIMIT = 4;
 
 const ROM_DATA = [
   { plane:'Knee flexion', aromR:'40\u00b0 (brace-limited stop)', aromL:'140\u00b0', promR:'Not assessed \u2014 brace precaution', promL:'145\u00b0' },
@@ -87,16 +81,20 @@ const ROM_DATA = [
 ];
 
 const IMPAIRMENTS = {
-  i1: { name:'Deficient trunk / core neuromuscular control', desc:'Poor, inconsistent transverse abdominis and multifidus activation on the drawing-in maneuver \u2014 relevant to protecting the lumbar fusion during functional activity.' },
-  i2: { name:'Quadriceps activation deficit, right knee', desc:'Weak, incomplete volitional quad contraction relative to the left \u2014 consistent with post-traumatic arthrogenic muscle inhibition.' },
-  i3: { name:'NWB gait / assistive device mechanics deficit', desc:'Uneven, trunk-compensated crutch gait pattern with hesitant weight transfer.' },
-  i4: { name:'Right knee AROM restriction', desc:'Limited flexion and a mild extension lag on the right, within the range currently permitted by the brace and fracture protocol.' },
-  i5: { name:'Reduced thoracic mobility', desc:'Limited active thoracic extension and rotation, consistent with prolonged recumbency and reduced upright tolerance.' },
-  i6: { name:'General deconditioning / reduced exertional tolerance', desc:'Presumed cardiopulmonary and general conditioning decline after several weeks of reduced activity; not formally tested this visit.' }
+  i1: { name:'Deficient trunk / core neuromuscular control', desc:'Poor, inconsistent transverse abdominis and multifidus activation on the drawing-in maneuver \u2014 relevant to protecting the lumbar fusion during functional activity.', tier:'green' },
+  i2: { name:'Quadriceps activation deficit, right knee', desc:'Weak, incomplete volitional quad contraction relative to the left \u2014 consistent with post-traumatic arthrogenic muscle inhibition.', tier:'green' },
+  i7: { name:'Transfer mechanics / bed mobility safety deficit', desc:'Inconsistent bracing and occasional breath-holding during sit-to-stand transfers; some difficulty coordinating with the NWB leg.', tier:'green' },
+  i3: { name:'NWB gait / assistive device mechanics deficit', desc:'Uneven, trunk-compensated crutch gait pattern with hesitant weight transfer.', tier:'green' },
+  i4: { name:'Right knee AROM restriction', desc:'Limited flexion and a mild extension lag on the right, within the range currently permitted by the brace and fracture protocol.', tier:'green' },
+  i8: { name:'Quadriceps girth / disuse atrophy, right thigh', desc:'Right thigh circumference 1.25 cm smaller than the left, consistent with disuse atrophy secondary to reduced activation and activity.', tier:'yellow' },
+  i5: { name:'Reduced thoracic mobility', desc:'Limited active thoracic extension and rotation, consistent with prolonged recumbency and reduced upright tolerance.', tier:'yellow' },
+  i9: { name:'Presumed lumbar segmental mobility restriction (fused levels)', desc:'Expected, structural restriction at the fused levels; not a modifiable treatment target this early, and unsafe to formally test given current precautions.', tier:'red' }
 };
 
-// Exercise menu per impairment: 4 options each, tiered. Impairments i1-i3 (case-central) skew green;
-// i4-i6 (real but lower priority this visit) skew yellow/red as a natural consequence of over-prioritizing them.
+// Exercise menu per impairment. Menu length varies: i1-i4,i7 (green-tier findings, legitimate
+// priority candidates) get full 4-option tiered menus; i5,i8 (yellow-tier, real but lower-yield)
+// get shorter menus; i9 (red-tier, not a valid treatment target) gets a deliberately sparse 2-option
+// menu since the "correct" response to prioritizing it is recognizing it shouldn't have been prioritized.
 const EXERCISES = {
   i1: [
     { name:'Supine abdominal bracing / drawing-in maneuver with tactile or biofeedback cueing', desc:'Low-load isometric activation of the deep trunk stabilizers, spine kept neutral throughout.', reveal:'Low-load, spine-neutral, and directly retrains the exact activation pattern found to be deficient \u2014 well matched to the finding and to current precautions.', tier:'green' },
@@ -128,18 +126,22 @@ const EXERCISES = {
     { name:'Foam roller thoracic extension mobilization', desc:'Supine thoracic extension performed over a foam roller.', reveal:'Effective long-term, but the supine transitions required add more effort and setup than needed as a starting point given current mobility limitations.', tier:'yellow' },
     { name:'High-velocity thoracic spine manipulation', desc:'High-velocity, low-amplitude manual thrust technique.', reveal:'Outside the scope of what this finding calls for, and an unnecessary risk directly adjacent to a recent spinal fusion.', tier:'red' }
   ],
-  i6: [
-    { name:'Seated upper-body ergometer at low, monitored intensity', desc:'Brief, low-intensity arm-crank aerobic activity performed seated, with symptom monitoring.', reveal:'A safe, low-impact way to begin addressing conditioning without loading the spine or the fractured leg.', tier:'green' },
-    { name:'Active range of motion circuit for uninvolved joints', desc:'General AROM circuit for the upper extremities and uninvolved leg, performed seated.', reveal:'A reasonable, low-demand option for general activity, though less targeted to conditioning specifically than monitored aerobic work.', tier:'yellow' },
-    { name:'Brief standing balance/tolerance training at parallel bars', desc:'Short bouts of supported standing to build upright tolerance.', reveal:'A reasonable functional goal, but combines standing demands on the NWB leg with a general-conditioning intent, making it a less clean fit for this specific impairment.', tier:'yellow' },
-    { name:'Unsupervised high-intensity interval training program', desc:'Independent, unsupervised vigorous aerobic conditioning.', reveal:'Unsafe and inappropriate at this stage given current precautions and lack of direct supervision.', tier:'red' }
+  i7: [
+    { name:'Guided log-roll transfer practice with verbal/tactile cueing for technique and trunk bracing', desc:'Supine-to-sit transfer practiced using log-roll technique with clinician cueing for bracing and sequencing.', reveal:'Directly targets the deficit observed on exam using guided, spine-safe technique \u2014 a strong starting point.', tier:'green' },
+    { name:'Sit-to-stand transfer training emphasizing NWB leg control and trunk bracing coordination', desc:'Practice sit-to-stand transfers coordinating trunk bracing with NWB leg control and crutch use.', reveal:'Addresses the exact dual-precaution coordination gap observed on exam \u2014 efficient use of the treatment slot.', tier:'green' },
+    { name:'Independent, unsupervised transfer practice without cueing', desc:'Patient practices transfers independently without clinician feedback.', reveal:'Reasonable as carryover homework, but a weaker choice for the actual in-session intervention compared to guided practice.', tier:'yellow' },
+    { name:'Transfers using a sit-up-style motion to assist momentum', desc:'Using trunk flexion/momentum to assist getting up from supine or sitting.', reveal:'Reinforces exactly the trunk-flexion substitution pattern that is unsafe this early after fusion.', tier:'red' }
+  ],
+  i8: [
+    { name:'Continue and progress the quadriceps activation/resistance program (same as the quad activation impairment)', desc:'Ongoing quad sets, supported SLR, and progression as tolerated \u2014 the same program addressing the activation deficit.', reveal:'Atrophy is a downstream consequence of reduced activation and disuse \u2014 the same low-load activation program already addresses this; no separate intervention is needed.', tier:'green' },
+    { name:'Passive electrical stimulation alone, without active contraction effort', desc:'NMES applied passively without the patient actively contracting alongside it.', reveal:'May offer some benefit, but passive stimulation alone doesn\u2019t retrain volitional control the way active effort does \u2014 a lower-value substitute for the primary program.', tier:'yellow' },
+    { name:'Heavy hypertrophy-focused resistance training to rebuild muscle mass quickly', desc:'High-load resistance training aimed directly at rebuilding thigh girth.', reveal:'Far too aggressive for a fracture only three weeks out \u2014 this addresses girth directly but ignores current loading precautions.', tier:'red' }
+  ],
+  i9: [
+    { name:'Patient education on realistic expectations for motion at fused segments; redirect session focus to modifiable impairments', desc:'Discuss that motion at the fused levels is a permanent, expected outcome of the surgery, and reframe today\u2019s plan around impairments that are actually treatable right now.', reveal:'The correct response to over-prioritizing this finding isn\u2019t an exercise at all \u2014 it\u2019s recognizing that motion at fused levels was never a modifiable treatment target this early.', tier:'green' },
+    { name:'Manual mobilization or stretching techniques targeting the fused segments', desc:'Clinician-applied mobilization or stretching aimed at the fused vertebral levels.', reveal:'Risks the hardware and the fusion itself \u2014 this impairment was never an appropriate exercise-selection target in the first place.', tier:'red' }
   ]
 };
-
-// Co-equal top priorities: trunk control (i1) and quad activation (i2) are both
-// defensible as #1/#2 in either order. Gait (i3) is the single expected #3.
-const IDEAL_TOP_IMPAIRMENTS = ['i1','i2','i3'];
-const IDEAL_ALTERNATE_SETS = [['i2','i1','i3']];
 </script>
 <script src="case-engine.js"></script>
 </body>
