@@ -489,6 +489,14 @@ function slotLabel(impId, slot) {
   return slot.text || '(write-in exercise — not yet named)';
 }
 
+function getSlotDosageType(impId, slot, key) {
+  if (slot.type === 'other') {
+    return (state.dosage[key] && state.dosage[key].dosageType) || 'resistance';
+  }
+  const ex = EXERCISES[impId][slot.idx];
+  return ex.dosageType || 'resistance';
+}
+
 function renderDosageBlocks(priorities) {
   const filled = priorities.filter(id => (state.exerciseSlots[id]||[]).length > 0);
   if (filled.length === 0) return '';
@@ -497,22 +505,50 @@ function renderDosageBlocks(priorities) {
     ${filled.map(impId => (state.exerciseSlots[impId]||[]).map((slot, slotIdx) => {
       const key = impId + '_' + slotIdx;
       const d = state.dosage[key] || {};
+      const isWriteIn = slot.type === 'other';
+      const dosageType = getSlotDosageType(impId, slot, key);
+      const isHold = dosageType === 'hold';
+
+      const typeSelector = isWriteIn ? `
+        <div class="dosage-field">
+          <label>Exercise type</label>
+          <select id="dosagetype_${key}" onchange="saveDosageField('${key}','dosageType',this.value); render();">
+            <option value="resistance" ${!isHold ? 'selected' : ''}>Resistance / strengthening</option>
+            <option value="hold" ${isHold ? 'selected' : ''}>Stretch / hold-based</option>
+          </select>
+        </div>
+      ` : '';
+
+      const doseFields = isHold ? `
+        <div class="dosage-field"><label>Sets</label><input type="number" id="sets_${key}" min="1" value="${d.sets||''}" style="width:70px;" oninput="saveDosageField('${key}','sets',this.value)"></div>
+        <div class="dosage-field"><label>Hold Time</label><input type="number" id="holdtime_${key}" min="1" value="${d.holdtime||''}" style="width:70px;" oninput="saveDosageField('${key}','holdtime',this.value)"></div>
+        <div class="dosage-field"><label>Unit</label>
+          <select id="holdunit_${key}" onchange="saveDosageField('${key}','holdunit',this.value)">
+            <option ${(d.holdunit==='sec'||!d.holdunit)?'selected':''}>sec</option>
+            <option ${d.holdunit==='min'?'selected':''}>min</option>
+          </select>
+        </div>
+      ` : `
+        <div class="dosage-field"><label>Sets</label><input type="number" id="sets_${key}" min="1" value="${d.sets||''}" style="width:70px;" oninput="saveDosageField('${key}','sets',this.value)"></div>
+        <div class="dosage-field"><label>Reps</label><input type="number" id="reps_${key}" min="1" value="${d.reps||''}" style="width:70px;" oninput="saveDosageField('${key}','reps',this.value)"></div>
+        <div class="dosage-field"><label>Load type</label>
+          <select id="loadtype_${key}" onchange="saveDosageField('${key}','loadtype',this.value)">
+            <option ${d.loadtype==='Absolute'?'selected':''}>Absolute</option>
+            <option ${d.loadtype==='%1RM'?'selected':''}>%1RM</option>
+            <option ${d.loadtype==='RIR'?'selected':''}>RIR</option>
+            <option ${d.loadtype==='RPE'?'selected':''}>RPE</option>
+          </select>
+        </div>
+        <div class="dosage-field"><label>Load value</label><input type="text" id="loadval_${key}" placeholder="e.g. 3 lb or RPE 6" value="${d.loadval||''}" style="width:120px;" oninput="saveDosageField('${key}','loadval',this.value)"></div>
+      `;
+
       return `
         <div class="panel">
           <div style="font-weight:600; margin-bottom:2px;">${slotLabel(impId, slot)}</div>
           <div style="color:var(--ink-soft); font-size:13px; margin-bottom:12px;">Addressing: ${IMPAIRMENTS[impId].name}</div>
           <div class="dosage-row">
-            <div class="dosage-field"><label>Sets</label><input type="number" id="sets_${key}" min="1" value="${d.sets||''}" style="width:70px;" oninput="saveDosageField('${key}','sets',this.value)"></div>
-            <div class="dosage-field"><label>Reps</label><input type="number" id="reps_${key}" min="1" value="${d.reps||''}" style="width:70px;" oninput="saveDosageField('${key}','reps',this.value)"></div>
-            <div class="dosage-field"><label>Load type</label>
-              <select id="loadtype_${key}" onchange="saveDosageField('${key}','loadtype',this.value)">
-                <option ${d.loadtype==='Absolute'?'selected':''}>Absolute</option>
-                <option ${d.loadtype==='%1RM'?'selected':''}>%1RM</option>
-                <option ${d.loadtype==='RIR'?'selected':''}>RIR</option>
-                <option ${d.loadtype==='RPE'?'selected':''}>RPE</option>
-              </select>
-            </div>
-            <div class="dosage-field"><label>Load value</label><input type="text" id="loadval_${key}" placeholder="e.g. 3 lb or RPE 6" value="${d.loadval||''}" style="width:120px;" oninput="saveDosageField('${key}','loadval',this.value)"></div>
+            ${typeSelector}
+            ${doseFields}
           </div>
           <textarea id="rationale_${key}" placeholder="Why this exercise, at this dosage, for this patient right now?" oninput="saveDosageField('${key}','rationale',this.value)">${d.rationale||''}</textarea>
         </div>
@@ -541,7 +577,13 @@ function allSlotsFilledAndDosed(priorities) {
     for (let i = 0; i < slots.length; i++) {
       const key = impId + '_' + i;
       const d = state.dosage[key];
-      if (!d || !d.sets || !d.reps || !d.loadval || !d.rationale) return false;
+      if (!d || !d.rationale || !d.sets) return false;
+      const dosageType = getSlotDosageType(impId, slots[i], key);
+      if (dosageType === 'hold') {
+        if (!d.holdtime) return false;
+      } else {
+        if (!d.reps || !d.loadval) return false;
+      }
     }
   }
   return true;
@@ -615,11 +657,15 @@ function renderSummary() {
         const d = state.dosage[key] || {};
         const tierInfo = slot.type === 'menu' ? `${TIER_DOT[EXERCISES[impId][slot.idx].tier]} <em>${TIER_LABEL[EXERCISES[impId][slot.idx].tier]}</em>` : '<em>Custom write-in — discuss in debrief</em>';
         const revealText = slot.type === 'menu' ? EXERCISES[impId][slot.idx].reveal : '';
+        const dosageType = getSlotDosageType(impId, slot, key);
+        const doseText = dosageType === 'hold'
+          ? `${d.sets||'—'} sets × ${d.holdtime||'—'} ${d.holdunit||'sec'} hold`
+          : `${d.sets||'—'} sets × ${d.reps||'—'} reps, ${d.loadtype||'—'} ${d.loadval||''}`;
         return `<div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line);">
           <div style="font-weight:600;">${slotLabel(impId, slot)}</div>
           <div style="font-size:13px; color:var(--ink-soft); margin-bottom:6px;">For: ${IMPAIRMENTS[impId].name} — ${tierInfo}</div>
           ${revealText ? `<div style="font-size:13.3px; margin-bottom:6px;">${revealText}</div>` : ''}
-          <div style="font-size:13.5px;">Dosage: ${d.sets||'—'} sets × ${d.reps||'—'} reps, ${d.loadtype||'—'} ${d.loadval||''}</div>
+          <div style="font-size:13.5px;">Dosage: ${doseText}</div>
           <div style="font-size:13.5px; margin-top:4px; color:var(--ink-soft);">${d.rationale||''}</div>
         </div>`;
       }).join('')).join('') || '<div>No exercises selected.</div>'}
