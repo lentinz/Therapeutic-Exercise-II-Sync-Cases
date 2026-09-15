@@ -18,6 +18,8 @@ let maxVisited = 0;
 
 const state = {
   groupName: "",
+  subjLocked: false,
+  objLocked: false,
   subjOpen: "", subjPicked: [],
   objOpen: "",
   screeningPicked: [], differentialPicked: [], impairmentSearchPicked: [],
@@ -176,17 +178,22 @@ function renderSubjOpen() {
 
 function renderSubjInterview() {
   const picked = state.subjPicked;
+  const locked = state.subjLocked;
   return `
     <div class="eyebrow">SUBJECTIVE — INTERVIEW</div>
     <h1 class="stage-title">Select Your Questions</h1>
-    <p class="lede">Choose the questions you'd prioritize asking this patient. You may select up to ${SUBJ_LIMIT} of ${SUBJ_QUESTIONS.length}.</p>
+    <p class="lede">Choose the questions you'd prioritize asking this patient. You may select up to ${SUBJ_LIMIT} of ${SUBJ_QUESTIONS.length}.${locked ? ' Your selections are locked in and shown read-only below.' : ' Once selected, a question is locked in — choose carefully.'}</p>
     <div class="counter">Selected: <strong>${picked.length} / ${SUBJ_LIMIT}</strong></div>
     <div class="tile-grid">
-      ${SUBJ_QUESTIONS.map(q => `
-        <button class="tile ${picked.includes(q.id) ? 'selected' : ''}" ${!picked.includes(q.id) && picked.length >= SUBJ_LIMIT ? 'disabled' : ''} onclick="toggleSubj('${q.id}')">
+      ${SUBJ_QUESTIONS.map(q => {
+        const isSel = picked.includes(q.id);
+        const inert = locked || isSel || picked.length >= SUBJ_LIMIT;
+        return `
+        <button class="tile ${isSel ? 'selected' : ''}" ${inert ? 'disabled' : ''} ${inert ? '' : `onclick="toggleSubj('${q.id}')"`}>
           <span class="category-label">${q.cat}</span>${q.q}
         </button>
-      `).join('')}
+      `;
+      }).join('')}
     </div>
     <div>
       ${picked.map(id => {
@@ -194,7 +201,7 @@ function renderSubjInterview() {
         return `<div class="finding"><span class="finding-tag">${q.q}</span>${q.a}</div>`;
       }).join('')}
     </div>
-    <button class="btn" ${picked.length === 0 ? 'disabled' : ''} onclick="goTo(4)">Continue to Objective Exam</button>
+    <button class="btn" ${picked.length === 0 ? 'disabled' : ''} onclick="state.subjLocked = true; goTo(4);">Continue to Objective Exam</button>
   `;
 }
 function toggleSubj(id) { toggleInArr(state.subjPicked, id, SUBJ_LIMIT); render(); }
@@ -219,17 +226,21 @@ function romTableHtml() {
   </table>`;
 }
 
-function renderObjCategory(title, sub, items, picked, limit, toggleFn) {
+function renderObjCategory(title, sub, items, picked, limit, toggleFn, locked) {
   return `
     <div class="obj-category">
       <h3>${title}</h3>
       <div class="cat-sub">${sub} — select up to ${limit} <span class="counter"><strong>${picked.length} / ${limit}</strong></span></div>
       <div class="tile-grid">
-        ${items.map(it => `
-          <button class="tile ${picked.includes(it.id) ? 'selected' : ''}" ${!picked.includes(it.id) && picked.length >= limit ? 'disabled' : ''} onclick="${toggleFn}('${it.id}')">
+        ${items.map(it => {
+          const isSel = picked.includes(it.id);
+          const inert = locked || isSel || picked.length >= limit;
+          return `
+          <button class="tile ${isSel ? 'selected' : ''}" ${inert ? 'disabled' : ''} ${inert ? '' : `onclick="${toggleFn}('${it.id}')"`}>
             <span class="category-label">${it.desc}</span>${it.name}
           </button>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
       ${picked.map(id => {
         const it = items.find(x => x.id === id);
@@ -242,6 +253,7 @@ function renderObjCategory(title, sub, items, picked, limit, toggleFn) {
 
 function renderObjExamine() {
   const hasDifferential = typeof DIFFERENTIAL !== 'undefined' && DIFFERENTIAL.length > 0;
+  const locked = state.objLocked;
   const categories = [
     { title: 'Safety and Gross Movement Screening', sub: 'Rule out non-musculoskeletal sources and assess gross movement patterns', items: SCREENING, picked: state.screeningPicked, limit: SCREEN_LIMIT, toggleFn: 'toggleScreening' }
   ];
@@ -253,9 +265,9 @@ function renderObjExamine() {
   return `
     <div class="eyebrow">OBJECTIVE — EXAMINE</div>
     <h1 class="stage-title">Select Your Tests and Measures</h1>
-    <p class="lede">Organized by purpose: rule out other sources${hasDifferential ? ', differentiate between competing hypotheses,' : ''} and search for underlying impairments.</p>
-    ${categories.map((c, i) => renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn)).join('')}
-    <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="goTo(6)">Continue to Impairment Priority</button>
+    <p class="lede">Organized by purpose: rule out other sources${hasDifferential ? ', differentiate between competing hypotheses,' : ''} and search for underlying impairments.${locked ? ' Your selections are locked in and shown read-only below.' : ' Once selected, an item is locked in — choose carefully.'}</p>
+    ${categories.map((c, i) => renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn, locked)).join('')}
+    <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="state.objLocked = true; goTo(6);">Continue to Impairment Priority</button>
   `;
 }
 function toggleScreening(id) { toggleInArr(state.screeningPicked, id, SCREEN_LIMIT); render(); }
