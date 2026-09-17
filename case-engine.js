@@ -279,7 +279,16 @@ function romTableHtml() {
   </table>`;
 }
 
-function renderObjCategory(title, sub, items, picked, limit, toggleFn, locked) {
+function renderObjCategory(title, sub, items, picked, limit, toggleFn, locked, unlocked) {
+  if (!unlocked) {
+    return `
+      <div class="obj-category obj-category-locked">
+        <h3>${title}</h3>
+        <div class="cat-sub">${sub}</div>
+        <div class="locked-message">&#128274; Complete the section above to unlock this one.</div>
+      </div>
+    `;
+  }
   return `
     <div class="obj-category">
       <h3>${title}</h3>
@@ -308,19 +317,25 @@ function renderObjExamine() {
   const hasDifferential = typeof DIFFERENTIAL !== 'undefined' && DIFFERENTIAL.length > 0;
   const locked = state.objLocked;
   const categories = [
-    { title: 'Safety and Gross Movement Screening', sub: 'Rule out non-musculoskeletal sources and assess gross movement patterns', items: SCREENING, picked: state.screeningPicked, limit: SCREEN_LIMIT, toggleFn: 'toggleScreening' }
+    { title: 'Safety and Gross Movement Screening', sub: 'Rule out non-musculoskeletal sources and assess gross movement patterns', items: SCREENING, picked: state.screeningPicked, limit: SCREEN_LIMIT, toggleFn: 'toggleScreening' },
+    { title: 'Body Structure & Function Measurements', sub: 'Only impairments revealed here will be available to prioritize next', items: IMPSEARCH, picked: state.impairmentSearchPicked, limit: IMPSEARCH_LIMIT, toggleFn: 'toggleImpSearch' }
   ];
   if (hasDifferential) {
     categories.push({ title: 'Differential Diagnosis Assessments', sub: 'Differentiate between plausible sources of the presentation', items: DIFFERENTIAL, picked: state.differentialPicked, limit: DIFF_LIMIT, toggleFn: 'toggleDifferential' });
   }
-  categories.push({ title: 'Body Structure & Function Measurements', sub: 'Only impairments revealed here will be available to prioritize next', items: IMPSEARCH, picked: state.impairmentSearchPicked, limit: IMPSEARCH_LIMIT, toggleFn: 'toggleImpSearch' });
+
+  const lastCategory = categories[categories.length - 1];
+  const continueDisabled = lastCategory.picked.length < lastCategory.limit;
 
   return `
     <div class="eyebrow">OBJECTIVE — EXAMINE</div>
     <h1 class="stage-title">Select Your Tests and Measures</h1>
-    <p class="lede">Organized by purpose: rule out other sources${hasDifferential ? ', differentiate between competing hypotheses,' : ''} and search for underlying impairments.${locked ? ' Your selections are locked in and shown read-only below.' : ' Once selected, an item is locked in — choose carefully.'}</p>
-    ${categories.map((c, i) => renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn, locked)).join('')}
-    <button class="btn" ${state.impairmentSearchPicked.length === 0 ? 'disabled' : ''} onclick="state.objLocked = true; goTo(6);">Continue to Impairment Priority</button>
+    <p class="lede">Complete each section in order — screening first, then impairment measures, then differential assessments.${locked ? ' Your selections are locked in and shown read-only below.' : ' Once selected, an item is locked in — choose carefully.'}</p>
+    ${categories.map((c, i) => {
+      const unlocked = locked || i === 0 || categories[i - 1].picked.length >= categories[i - 1].limit;
+      return renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn, locked, unlocked);
+    }).join('')}
+    <button class="btn" ${continueDisabled ? 'disabled' : ''} onclick="state.objLocked = true; goTo(6);">Continue to Impairment Priority</button>
     <div class="note">${state.objLocked ? 'Your selections are locked in.' : "You won't be able to change your selections once you move on to the next page."}</div>
   `;
 }

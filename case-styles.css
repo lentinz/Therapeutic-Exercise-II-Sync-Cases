@@ -56,6 +56,9 @@
   .finding { margin-top: 4px; padding: 14px 16px; border-left: 3px solid var(--line-strong); background: var(--paper-dim); font-size: 14px; }
   .finding-tag { font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px; color: var(--teal); }
   .obj-category { margin-bottom: 34px; }
+  .obj-category-locked { opacity: 0.55; }
+  .obj-category-locked .cat-sub { margin-bottom: 6px; }
+  .locked-message { font-size: 13px; color: var(--ink-soft); padding: 10px 0; }
   .obj-category h3 { font-size: 16px; margin-bottom: 4px; }
   .obj-category .cat-sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 12px; }
   table.rom-table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 13.5px; }
