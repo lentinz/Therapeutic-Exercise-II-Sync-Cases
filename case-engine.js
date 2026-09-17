@@ -279,7 +279,8 @@ function romTableHtml() {
   </table>`;
 }
 
-function renderObjCategory(title, sub, items, picked, limit, toggleFn, locked, unlocked) {
+function renderObjCategory(title, sub, items, picked, limit, toggleFn, locked, unlocked, isLast) {
+  const requirementText = isLast ? `select ${limit} to continue` : `select ${limit} to unlock the next section`;
   if (!unlocked) {
     return `
       <div class="obj-category obj-category-locked">
@@ -292,7 +293,7 @@ function renderObjCategory(title, sub, items, picked, limit, toggleFn, locked, u
   return `
     <div class="obj-category">
       <h3>${title}</h3>
-      <div class="cat-sub">${sub} — select up to ${limit} <span class="counter"><strong>${picked.length} / ${limit}</strong></span></div>
+      <div class="cat-sub">${sub} — ${requirementText} <span class="counter"><strong>${picked.length} / ${limit}</strong></span></div>
       <div class="tile-grid">
         ${items.map(it => {
           const isSel = picked.includes(it.id);
@@ -333,7 +334,7 @@ function renderObjExamine() {
     <p class="lede">Complete each section in order — screening first, then impairment measures, then differential assessments.${locked ? ' Your selections are locked in and shown read-only below.' : ' Once selected, an item is locked in — choose carefully.'}</p>
     ${categories.map((c, i) => {
       const unlocked = locked || i === 0 || categories[i - 1].picked.length >= categories[i - 1].limit;
-      return renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn, locked, unlocked);
+      return renderObjCategory(String.fromCharCode(65 + i) + '. ' + c.title, c.sub, c.items, c.picked, c.limit, c.toggleFn, locked, unlocked, i === categories.length - 1);
     }).join('')}
     <button class="btn" ${continueDisabled ? 'disabled' : ''} onclick="state.objLocked = true; goTo(6);">Continue to Impairment Priority</button>
     <div class="note">${state.objLocked ? 'Your selections are locked in.' : "You won't be able to change your selections once you move on to the next page."}</div>
