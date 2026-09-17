@@ -113,6 +113,7 @@ function render() {
     html = `<button class="btn secondary small" style="margin-bottom:20px;" onclick="goTo(${current-1})">&larr; Back</button>` + html;
   }
   document.getElementById('main').innerHTML = html;
+  updateCaseRefVisibility();
   if (current === 6) initDragList();
   if (current === 0) checkWelcomeReady();
   if (current === 2) checkMinWords('subjOpenInput','subjContinueBtn',10);
@@ -681,11 +682,49 @@ function renderSummary() {
 }
 
 function saveAndGo(inputId, key, nextStage) { state[key] = document.getElementById(inputId).value; goTo(nextStage); }
+function caseRefContentHtml() {
+  const img = (typeof CASE_IMAGE !== 'undefined' && CASE_IMAGE)
+    ? `<img src="${CASE_IMAGE}" alt="${(typeof CASE_IMAGE_ALT !== 'undefined' && CASE_IMAGE_ALT) || ''}" style="width:100%; margin-bottom:10px; display:block; border:1px solid var(--line);">`
+    : '';
+  const scene = (typeof CASE_SCENE !== 'undefined' && CASE_SCENE) ? `<p style="font-style:italic; font-size:12.5px; color:var(--ink-soft); margin:0 0 12px 0;">${CASE_SCENE}</p>` : '';
+  const patientRows = (typeof PATIENT_INFO !== 'undefined' ? PATIENT_INFO : [])
+    .map(p => `<p style="margin:0 0 8px 0; font-size:12.5px;"><strong>${p.label}:</strong> ${p.value}</p>`).join('');
+  return `${img}${scene}<div>${patientRows}</div>`;
+}
+
+function ensureCaseRefSidebar() {
+  if (document.getElementById('caseRefSidebar')) return;
+  const appEl = document.querySelector('.app');
+  if (!appEl) return;
+  const aside = document.createElement('aside');
+  aside.className = 'case-ref-sidebar';
+  aside.id = 'caseRefSidebar';
+  aside.innerHTML = `
+    <div class="case-ref-header" onclick="toggleCaseRef()">
+      <span class="case-ref-title-text">Case Reference</span>
+      <span class="case-ref-chevron">&#9656;</span>
+    </div>
+    <div class="case-ref-body" id="caseRefBody">${caseRefContentHtml()}</div>
+  `;
+  appEl.appendChild(aside);
+}
+function toggleCaseRef() {
+  const appEl = document.querySelector('.app');
+  if (appEl) appEl.classList.toggle('ref-collapsed');
+}
+function updateCaseRefVisibility() {
+  const appEl = document.querySelector('.app');
+  if (!appEl) return;
+  const showCaseRef = current >= 2; // hidden on Welcome (0) and Case Intro (1); shown from Subjective: Reflect onward
+  appEl.classList.toggle('has-case-ref', showCaseRef);
+}
+
 function initShell() {
   document.getElementById('sidebarTitle').textContent = COURSE_TITLE;
   document.getElementById('sidebarCaseTitle').innerHTML = CASE_NUMBER + '<br>' + CASE_TITLE;
   document.querySelector('.author-credit').textContent = AUTHOR_CREDIT;
   document.title = CASE_NUMBER + ': ' + CASE_TITLE;
+  ensureCaseRefSidebar();
 }
 
 function bootCase() {
