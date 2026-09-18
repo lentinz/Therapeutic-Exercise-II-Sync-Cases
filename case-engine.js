@@ -767,7 +767,7 @@ function renderSummary() {
       }).join('')).join('') || '<div>No interventions selected.</div>'}
       ${state.otherInterventions ? `<div style="margin-top:10px;"><strong>Other interventions:</strong> ${state.otherInterventions}</div>` : ''}
     </div>
-    <p class="lede">This section is not scored against a tier system — it's the main focus of our large-group debrief.</p>
+    <p class="lede">Tiers are shown for each intervention above for your reference — this section is the main focus of our large-group debrief.</p>
 
     <div id="printBar">
       <button class="btn" onclick="clearSavedProgress(); window.print();">Download / Print Certificate</button>
