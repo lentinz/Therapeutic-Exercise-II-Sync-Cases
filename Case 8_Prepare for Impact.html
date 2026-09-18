@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Case</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -42,6 +43,11 @@ const CASE_SPECIFIC_OBJECTIVES = [
   'Weigh competing clinical priorities across two body regions with differing precaution profiles, and justify a prioritization order in a case where more than one order is defensible.',
   'Apply weight-bearing and spinal movement precautions appropriately when selecting and dosing therapeutic exercise.'
 ];
+
+const CASE_PASSWORD = ""; // set a value to require an access code before this case opens
+
+const RANK_LIMIT = 4;
+const SLOT_PLAN = [2, 1, 1];
 
 const SUBJ_QUESTIONS = [
   { id:'s1', cat:'Mechanism', q:'Can you walk me through what happened during the jump?', a:'Static-line jump from a UH-60 during night training. Reports the canopy did not fully inflate symmetrically. Landed hard and off-axis, right leg absorbing most of the impact before rolling onto the low back rather than completing a full parachute landing fall.', tier:'green' },
