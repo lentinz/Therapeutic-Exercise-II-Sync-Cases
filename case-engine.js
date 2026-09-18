@@ -363,6 +363,27 @@ function toggleInArr(arr, id, limit) {
   else if (arr.length < limit) arr.push(id);
 }
 
+function buildImpairmentDesc(impId) {
+  // An impairment's description is built ONLY from the specific findings the student actually
+  // uncovered — not a static blob that assumes every revealing test was run. Each item that can
+  // reveal an impairment may carry an optional `impairmentNote` fragment describing what THAT
+  // specific test contributes; if none are defined (or none of the picked items have one), falls
+  // back to the impairment's static `desc` for backward compatibility with simpler cases.
+  const sources = [
+    { picked: state.screeningPicked, items: (typeof SCREENING !== 'undefined' ? SCREENING : []) },
+    { picked: state.differentialPicked, items: (typeof DIFFERENTIAL !== 'undefined' ? DIFFERENTIAL : []) },
+    { picked: state.impairmentSearchPicked, items: (typeof IMPSEARCH !== 'undefined' ? IMPSEARCH : []) }
+  ];
+  const notes = [];
+  sources.forEach(src => {
+    (src.picked || []).forEach(id => {
+      const item = src.items.find(x => x.id === id);
+      if (item && item.revealsImpairment === impId && item.impairmentNote) notes.push(item.impairmentNote);
+    });
+  });
+  return notes.length > 0 ? notes.join('; ') + '.' : IMPAIRMENTS[impId].desc;
+}
+
 function renderImpairments() {
   const revealed = revealedImpairmentIds();
   if (state.impairmentOrder.length === 0) state.impairmentOrder = [...revealed];
@@ -377,7 +398,7 @@ function renderImpairments() {
         const imp = IMPAIRMENTS[id];
         return `<li class="imp-drag-item" draggable="true" data-id="${id}">
           <span class="imp-rank">${idx < maxRank ? idx+1 : '—'}</span>
-          <div><div class="imp-name">${imp.name}</div><div class="imp-desc">${imp.desc}</div></div>
+          <div><div class="imp-name">${imp.name}</div><div class="imp-desc">${buildImpairmentDesc(id)}</div></div>
         </li>`;
       }).join('')}
     </ul>
