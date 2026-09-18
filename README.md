@@ -21,7 +21,7 @@ Case Activities for Synchronous Sessions — Therapeutic Exercise II Course
 
 ### Module 5
 - **Case 5A:** _Coming soon_
-- **Case 5B:** _Coming soon_
+- **Case 5B: Prepare for Impact** — https://lentinz.github.io/Therapeutic-Exercise-II-Sync-Cases/Case%205B_Prepare%20for%20Impact.html
 
 ### Module 6
 - **Case 6A:** _Coming soon_
