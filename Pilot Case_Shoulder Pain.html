@@ -34,7 +34,7 @@ const CASE_IMAGE = "case1-shoulder-intro.jpg";
 const CASE_IMAGE_ALT = "Patient holding her shoulder in an outpatient physical therapy clinic";
 
 const PATIENT_INFO = [
-  { label: "Patient", value: "52-year-old right-hand-dominant adult, recreational tennis player (3x/week)" },
+  { label: "Patient", value: "52-year-old right-hand-dominant secretary, recreational tennis player (2x/week)" },
   { label: "Presenting complaint", value: "Right lateral shoulder pain, gradual onset ~4 months ago" },
   { label: "Referral", value: "Self-referred to outpatient orthopedic physical therapy" }
 ];
@@ -44,97 +44,86 @@ const CASE_SPECIFIC_OBJECTIVES = []; // add case-specific objectives here if thi
 const CASE_PASSWORD = "practicecase"; // set a value (e.g. "shoulder2026") to require an access code before this case opens; leave blank to disable
 
 const SUBJ_QUESTIONS = [
-  { id:'s1', cat:'Onset', q:'How did the pain begin?', a:'Gradual onset over 4 months, no single traumatic event. Started after increasing tennis play from once to three times weekly.', tier:'green' },
-  { id:'s2', cat:'Pain behavior', q:'Any night pain or trouble sleeping on that side?', a:'Wakes 2–3 times per night when rolling onto the right shoulder. Cannot sleep on that side at all currently.', tier:'green' },
+  { id:'s1', cat:'Onset', q:'How did the pain begin?', a:'Gradual onset over 4 months, no single traumatic event. Started after increasing tennis play from once to twice weekly.', tier:'green' },
+  { id:'s2', cat:'Pain behavior', q:'Do you have any pain lying on your right shoulder at night, or trouble sleeping because of it?', a:"I can't lie on my right side at all right now — it wakes me up if I roll onto it. If I stay off that side, I sleep fine and I'm not waking up for any other reason.", tier:'green' },
   { id:'s3', cat:'Aggravating factors', q:'What activities make it worse?', a:'Overhead serving motion in tennis, reaching into a high cabinet, and putting on a jacket.', tier:'green' },
-  { id:'s4', cat:'Red flags', q:'Any unexplained weight loss, fever, or night sweats?', a:'None reported. No constitutional symptoms.', tier:'green' },
+  { id:'s4', cat:'Review of Systems / PMH', q:'Any other health conditions, or anything changed with your overall health recently — fevers, unexplained weight loss, night sweats, anything else?', a:'No significant medical history — no diabetes, no thyroid issues. No fevers, no unexplained weight loss, no night sweats. Feeling fine otherwise.', tier:'green' },
   { id:'s5', cat:'Prior treatment', q:'Has anything been tried so far?', a:'Over-the-counter NSAIDs with mild, temporary relief. No formal PT or injections yet.', tier:'green' },
   { id:'s6', cat:'Function', q:'What activities matter most to get back to?', a:'Wants to return to competitive tennis and is frustrated by not being able to serve without pain.', tier:'yellow' },
-  { id:'s7', cat:'History', q:'Any prior shoulder injuries?', a:'None on the right. Reports a minor left shoulder strain 6 years ago that resolved without treatment.', tier:'yellow' },
-  { id:'s8', cat:'Occupation', q:'What does a typical work day involve?', a:'Desk-based project manager, occasional overhead reaching for storage but not repetitive or loaded.', tier:'red' }
+  { id:'s7', cat:'History', q:'Do you have a history of any head, neck, shoulder, or arm injuries on either side?', a:"No head or neck injuries. Right shoulder's been fine until now. Left shoulder had a minor strain about six years ago that fully resolved on its own.", tier:'green' },
+  { id:'s8', cat:'Occupation', q:'What does a typical work day involve?', a:'Mostly desk-based secretarial work — typing, filing, answering phones. Occasional reaching into filing cabinets, but nothing repetitive or heavy.', tier:'yellow' },
+  { id:'s9', cat:'Neuro screen', q:'Any numbness, tingling, or weakness anywhere in your arm or hand?', a:'No numbness or tingling. The shoulder itself feels weak with certain movements, but nothing in my arm or hand below the elbow.', tier:'green' },
+  { id:'s10', cat:'Patient belief', q:'Do you think this is just because you\'re getting older?', a:"I don't know... maybe? I guess that's probably it.", tier:'red' }
 ];
-const SUBJ_LIMIT = 5;
+const SUBJ_LIMIT = 6;
 
 const SCREENING = [
-  { id:'sc1', name:'Cervical spine active screen', desc:'AROM and overpressure, cervical clearing', result:'Full, pain-free cervical AROM in all planes. No reproduction of shoulder symptoms.', tier:'green' },
-  { id:'sc2', name:'Systemic / red flag screen', desc:'Vitals, constitutional symptoms check', result:'No fever, no unexplained weight loss, no night sweats. Vitals within normal limits.', tier:'green' },
-  { id:'sc3', name:'Apley scratch test', desc:'Combined-motion gross shoulder mobility screen, bilateral', result:'Mild restriction reaching up the back on the right compared to the left. Reaching overhead behind the head is roughly symmetrical.', tier:'yellow' },
+  { id:'sc1', name:'Cervical spine screen', desc:'Postural observation, palpation, AROM with overpressure, cervical clearing', result:'Full, pain-free cervical AROM in all planes. Posture and palpation unremarkable. No reproduction of shoulder symptoms.', conditionalTier: { dependsOn:['s9'], tiers:{0:'green',1:'yellow'}, explanation:"Green if numbness/tingling/weakness wasn't asked about subjectively, since cervical screening becomes the primary way to rule out a cervical source. Yellow if it was — some of that rule-out value is already covered." } },
+  { id:'sc2', name:'Systems Review', desc:'Vitals, constitutional symptoms check', result:'No fever, no unexplained weight loss, no night sweats. Vitals within normal limits.', conditionalTier: { dependsOn:['s4'], tiers:{0:'green',1:'yellow'}, explanation:"Green if Review of Systems/PMH wasn't asked about subjectively, since this becomes the only place that information comes from. Yellow if it was — largely redundant with what the patient already reported." } },
+  { id:'sc3', name:'Apley scratch test', desc:'Combined-motion gross shoulder mobility screen, bilateral', result:'Moderate mobility restriction reaching up the back on the right (functional internal rotation), with mild pain. Reaching overhead behind the head is roughly symmetrical.', tier:'green' },
   { id:'sc4', name:'Functional squat observation', desc:'General lower-quarter movement screen, unrelated body region', result:'Full squat depth with no compensations noted — unremarkable, and not clinically relevant to this presentation.', tier:'red' }
 ];
 const SCREEN_LIMIT = 2;
 
 const DIFFERENTIAL = [
-  { id:'d1', name:"Neer's impingement test", desc:'Passive forward flexion with scapular stabilization', result:'Positive — reproduces the familiar lateral shoulder pain.', tier:'green' },
-  { id:'d2', name:'Hawkins-Kennedy test', desc:'Passive internal rotation at 90° flexion', result:'Positive — reproduces the lateral shoulder pain.', tier:'green' },
-  { id:'d3', name:'Empty can test', desc:'Isometric resistance in scapular plane, thumb down', result:'Pain and mild weakness on the right compared to the left.', tier:'yellow' },
-  { id:'d4', name:'Drop arm test', desc:'Screens for full-thickness rotator cuff tear', result:'Negative — the arm is lowered with control.', tier:'red' }
+  { id:'d1', name:"Neer's impingement test", desc:'Passive forward flexion with scapular stabilization', result:'Positive — reproduces the familiar lateral shoulder pain.', tier:'yellow' },
+  { id:'d2', name:'Hawkins-Kennedy test', desc:'Passive internal rotation at 90° flexion', result:'Positive — reproduces the lateral shoulder pain.', tier:'yellow' },
+  { id:'d3', name:'Drop arm test', desc:'Screens for full-thickness rotator cuff tear', result:'Negative — the arm is lowered with control.', tier:'yellow' },
+  { id:'d4', name:'Anterior apprehension test', desc:'Screens for anterior glenohumeral instability', result:'Negative — no apprehension or guarding reported with the maneuver.', tier:'red' }
 ];
 const DIFF_LIMIT = 2;
 
 const IMPSEARCH = [
-  { id:'is2', name:'Resisted strength testing by plane', desc:'Isometric resistance testing, scapular plane and rotations', revealsImpairment:'i1', result:'Reduced force production on resisted abduction and external rotation on the right compared to the left, limited in part by pain.', tier:'green' },
-  { id:'is1', name:'AROM / PROM measurement (table)', desc:'Flexion, abduction, internal and external rotation, both sides', revealsImpairment:'i2', isTable:true, tier:'green' },
-  { id:'is3', name:'Scapular dyskinesis observation', desc:'Observe scapular motion during active arm elevation', revealsImpairment:'i3', result:'Early scapular elevation and mild winging noted during active elevation past 90°, more pronounced on the right.', tier:'green' },
-  { id:'is4', name:'Cross-body adduction / posterior shoulder mobility', desc:'Passive cross-body adduction, bilateral comparison', revealsImpairment:'i4', result:'Cross-body adduction measured approximately 20° less on the right than the left.', tier:'yellow' },
-  { id:'is5', name:'Thoracic spine mobility screen', desc:'Active thoracic extension and rotation', revealsImpairment:'i5', result:'Reduced active thoracic extension noted, with a tendency to substitute lumbar extension.', tier:'yellow' },
-  { id:'is6', name:'Functional task observation', desc:'Observe reaching, dressing-type movement patterns', revealsImpairment:'i6', result:'Guarding and hesitancy observed when reaching overhead; patient reports avoiding the motion whenever possible.', tier:'red' }
+  { id:'is2', name:'Resisted strength testing by plane', desc:'Isometric resistance testing, scapular plane and rotations', revealsImpairment:'i1', result:'4/5 on resisted abduction and external rotation on the right; 5/5 on resisted internal rotation and elbow flexion. Left side 5/5 throughout. Mild pain reported during resisted abduction and external rotation.', tier:'green' },
+  { id:'is_arom', name:'AROM in standing', desc:'Flexion, extension, abduction, external rotation at 0° abduction', revealsImpairment:'i4', result:'Flexion 168° (left 180°), pain-free. Abduction 165° (left 180°), moderate pain with a painful arc noted through mid-range. Extension 45° (left 50°), mild pain. External rotation at 0° abduction 80° (left 85°), pain-free.', tier:'yellow' },
+  { id:'is_prom', name:'PROM on table', desc:'Flexion, abduction, external and internal rotation at 90° abduction', revealsImpairment:'i2', result:'Flexion 178° (left 180°), pain-free. Abduction 177° (left 180°), pain-free. External rotation at 90° abduction 83° (left 85°), mild pain only at forced end-range. Internal rotation at 90° abduction 45° (left 60°), pain-free — the significant finding, a 15° side-to-side deficit.', tier:'green' },
+  { id:'is3', name:'Scapular dyskinesis observation', desc:'Observe scapular motion during active arm elevation', revealsImpairment:'i3', result:'Early scapular elevation and mild winging noted during active elevation past 90°, more pronounced on the right.', tier:'yellow' },
+  { id:'is_pcm', name:'Posterior capsule mobility assessment', desc:'Cross-body adduction and posterior glenohumeral joint play, bilateral comparison', revealsImpairment:'i2', result:'Cross-body adduction measured approximately 10° less than the uninvolved side. Posterior glide/joint play assessed as mildly restricted compared to the left.', tier:'yellow' },
+  { id:'is5', name:'Thoracic spine mobility screen', desc:'Active thoracic extension and rotation', revealsImpairment:'i5', result:'Reduced active thoracic extension noted, with a tendency to substitute lumbar extension.', tier:'yellow' }
 ];
 const IMPSEARCH_LIMIT = 3;
 
-const ROM_DATA = [
-  { plane:'Flexion', aromR:'165°', aromL:'180°', promR:'175°', promL:'180°' },
-  { plane:'Abduction', aromR:'150° (painful arc 70-120°)', aromL:'180°', promR:'165°', promL:'180°' },
-  { plane:'Internal rotation', aromR:'45°', aromL:'60°', promR:'50°', promL:'62°' },
-  { plane:'External rotation', aromR:'75°', aromL:'85°', promR:'80°', promL:'85°' }
-];
-
 const IMPAIRMENTS = {
   i1: { name:'Reduced force production — resisted abduction / external rotation', desc:'Right-sided weakness relative to the left on manual muscle testing.', tier:'green' },
-  i2: { name:'Internal rotation ROM asymmetry', desc:'Measured IR deficit compared to the uninvolved side; cause not yet determined.', tier:'green' },
-  i3: { name:'Altered scapular motion during elevation', desc:'Early elevation and mild winging observed past 90° of arm elevation.', tier:'green' },
-  i4: { name:'Reduced cross-body adduction ROM', desc:'Approximately 20° less than the uninvolved side; contributing structure not yet determined.', tier:'yellow' },
-  i5: { name:'Reduced thoracic extension mobility', desc:'Limited active thoracic extension with lumbar substitution.', tier:'yellow' },
-  i6: { name:'Movement avoidance / guarding with overhead tasks', desc:'Observed hesitancy and self-reported avoidance of overhead reaching.', tier:'red' }
+  i2: { name:'Reduced internal rotation / posterior capsule mobility', desc:'IR deficit at 90° abduction and reduced cross-body adduction/posterior glide compared to the uninvolved side; contributing structure not yet determined.', tier:'green' },
+  i3: { name:'Altered scapular motion during elevation', desc:'Early elevation and mild winging observed past 90° of arm elevation.', tier:'yellow' },
+  i4: { name:'Decreased overhead active ROM (flexion/abduction) with painful arc', desc:'Active flexion and abduction each reduced compared to the uninvolved side, with a painful arc noted on abduction.', tier:'yellow' },
+  i5: { name:'Reduced thoracic extension mobility', desc:'Limited active thoracic extension with lumbar substitution.', tier:'yellow' }
 };
 
-// Exercise menu per impairment: 4 options each, tiered. Impairments i1-i3 (case-central) skew green;
-// i4-i6 (real but lower priority this visit) skew yellow/red as a natural consequence of over-prioritizing them.
+// Intervention menu per impairment: 4 options each, tiered. Impairments i1/i2 (case-central, green) skew toward
+// green interventions; i3/i4/i5 (real but lower-priority findings) skew yellow/red as a natural consequence of
+// over-prioritizing them.
 const EXERCISES = {
   i1: [
-    { name:'Sidelying external rotation with light dumbbell', desc:'Isometric/isotonic resistance exercise performed sidelying, targeting posterior cuff musculature with light dumbbell load.', reveal:'Low load and controlled tempo directly support the rotator cuff force couple — a solid fit for this finding.', tier:'green' },
+    { name:'Sidelying external rotation with dumbbell', desc:'Isometric/isotonic resistance exercise performed sidelying, targeting posterior cuff musculature.', reveal:'Directly supports the rotator cuff force couple in a low-irritability position — a solid fit for this finding.', tier:'green' },
     { name:'Prone horizontal abduction ("T" raises)', desc:'Prone exercise targeting posterior cuff and scapular retractor musculature.', reveal:'Targets the right muscle groups with an appropriate loading strategy.', tier:'green' },
-    { name:'Scaption with external rotation ("full can")', desc:'Loaded exercise performed in the scapular plane of elevation with external rotation.', reveal:'Reasonable cuff-loading exercise, but performed in a slightly higher-irritability position than the "T" raise or sidelying ER variants.', tier:'yellow' },
-    { name:'Heavy overhead barbell press', desc:'Heavy overhead pressing pattern loading the shoulder complex.', reveal:'Loads the cuff and deltoid, but far too aggressive for a still-irritable subacromial presentation.', tier:'red' }
+    { name:'Full range abduction with band resistance', desc:'Standing resisted abduction through available range using elastic band resistance.', reveal:'Reasonable cuff-loading exercise, but moves through a larger arc — including the painful mid-range — than the isolation-style options.', tier:'yellow' },
+    { name:'Overhead barbell press', desc:'Bilateral overhead pressing pattern loading the shoulder complex.', reveal:'A more complex, higher-demand pressing pattern than this presentation calls for as a starting point.', tier:'yellow' }
   ],
   i2: [
-    { name:'Sleeper stretch', desc:'Sidelying passive internal rotation stretch.', reveal:'Directly and specifically targets the measured IR deficit.', tier:'green', dosageType:'hold' },
-    { name:'Cross-body horizontal adduction stretch', desc:'Cross-body adduction stretch targeting posterior shoulder tissue.', reveal:'Directly targets posterior shoulder restriction contributing to the IR deficit.', tier:'green', dosageType:'hold' },
-    { name:'Posterior shoulder self-mobilization against wall', desc:'Sustained low-load stretch performed independently against a wall.', reveal:'A reasonable option, but less targeted to this specific deficit than the sleeper or cross-body stretch.', tier:'yellow', dosageType:'hold' },
-    { name:'Partner-assisted forced overpressure stretch', desc:'Partner-assisted stretch applying manual overpressure at end range.', reveal:'Risks excessive force on a restriction whose cause hasn\u2019t actually been determined yet — not appropriate this early.', tier:'red', dosageType:'hold' }
+    { name:'Sleeper stretch', desc:'Sidelying passive internal rotation stretch.', reveal:'Directly and specifically targets the measured IR deficit, and reproduces exactly the pain-free passive motion found on exam.', tier:'green', dosageType:'hold' },
+    { name:'Behind-the-back IR stretch with strap', desc:'Standing active internal rotation stretch behind the back using a strap.', reveal:'Targets the same restriction, but actively reproduces the motion pattern that was painful on the Apley scratch test — expect some initial discomfort compared to the passive sleeper stretch.', tier:'yellow', dosageType:'hold' },
+    { name:'Cross-body stretch with scapular stabilization', desc:'Cross-body adduction stretch performed with manual scapular stabilization.', reveal:'Reasonable and well-targeted, but the added stabilization cueing is a refinement most patients don\u2019t need as a starting point.', tier:'yellow', dosageType:'hold' },
+    { name:'A-P glenohumeral mobilization, Grade III/IV', desc:'Clinician-applied anterior-to-posterior glenohumeral joint mobilization.', reveal:'Directly addresses the confirmed posterior capsule/joint play restriction; Grade III-IV is appropriate given a true mobility deficit rather than primarily a pain/guarding issue.', tier:'green', dosageType:'mobilization' }
   ],
   i3: [
-    { name:'Scapular wall slides', desc:'Wall-supported exercise reinforcing scapular upward rotation and posterior tilt during arm elevation.', reveal:'Reinforces the exact motion pattern that was found to be altered.', tier:'green' },
-    { name:'Lower trapezius "Y" raises', desc:'Prone or standing exercise targeting the lower trapezius in a "Y" position.', reveal:'Targets a commonly underactive scapular stabilizer relevant to this finding.', tier:'green' },
-    { name:'Serratus anterior wall push-up plus', desc:'Closed-chain exercise emphasizing scapular protraction and serratus anterior activation.', reveal:'Good target muscle, but a more advanced progression than this patient likely needs as a starting point.', tier:'yellow' },
-    { name:'Heavy barbell shrugs', desc:'Loaded shrug exercise emphasizing upper trapezius activation.', reveal:'Reinforces upper trap dominance — works against what this finding is calling for.', tier:'red' }
+    { name:'Scapular wall slides', desc:'Wall-supported exercise reinforcing scapular upward rotation and posterior tilt during arm elevation.', reveal:'A reasonable choice, but the underlying finding itself (visual scapular dyskinesis) has notably poor inter-rater reliability and contested clinical significance in current literature — no single corrective exercise here can be confidently called clearly superior.', tier:'yellow' },
+    { name:'Lower trapezius "Y" raises', desc:'Prone or standing exercise targeting the lower trapezius in a "Y" position.', reveal:'Targets a plausible scapular stabilizer, but the same reliability caveat applies — reasonable, not clearly best.', tier:'yellow' },
+    { name:'Serratus anterior wall push-up plus', desc:'Closed-chain exercise emphasizing scapular protraction and serratus anterior activation.', reveal:'A reasonable, targeted option — but again, no single exercise here is clearly superior given the underlying finding\u2019s contested reliability.', tier:'yellow' },
+    { name:'Seated scapular retraction AROM', desc:'Seated, unloaded active scapular retraction through available range.', reveal:'A very general, non-specific movement performed without any resistance — unlikely to provide enough of a stimulus to drive real adaptation.', tier:'red' }
   ],
   i4: [
-    { name:'Side-lying stretch with towel roll', desc:'Sidelying stretch performed with a towel roll for support.', reveal:'A gentle, well-tolerated option appropriate for a still-irritable shoulder.', tier:'green', dosageType:'hold' },
-    { name:'Sleeper stretch', desc:'Sidelying passive internal rotation stretch.', reveal:'Same tissue target as the IR asymmetry exercise — a workable but somewhat redundant use of this treatment slot.', tier:'yellow', dosageType:'hold' },
-    { name:'Cross-body stretch with scapular stabilization', desc:'Cross-body adduction stretch performed with manual scapular stabilization.', reveal:'Reasonable, but adds a layer of complexity not clearly needed for this finding yet.', tier:'yellow', dosageType:'hold' },
-    { name:'Manual end-range joint mobilization without further assessment', desc:'Clinician-applied manual mobilization technique at end range.', reveal:'Jumps to a specific manual technique before the actual restricting structure has been identified — premature here.', tier:'red', dosageType:'hold' }
+    { name:'Supine shoulder flexion AAROM with wand', desc:'Active-assisted shoulder flexion performed supine using a wand.', reveal:'A reasonable, low-demand starting option for a mild-to-moderate active ROM restriction — not a major priority finding this session.', tier:'yellow' },
+    { name:'Pulley-assisted scaption', desc:'Active-assisted shoulder elevation in the scapular plane using an overhead pulley system.', reveal:'A reasonable active-assisted option targeting the same restricted motion.', tier:'yellow' },
+    { name:'Standing shoulder abduction AAROM with wand', desc:'Active-assisted shoulder abduction performed standing using a wand.', reveal:'A reasonable active-assisted option, similar in demand to the other AAROM choices.', tier:'yellow' },
+    { name:'Therapist-guided shoulder flexion and abduction PROM in supine', desc:'Clinician-guided passive range of motion into flexion and abduction.', reveal:'Passive flexion and abduction were both essentially full and pain-free on exam — this impairment is an active-motion limitation, so a passive-ROM intervention doesn\u2019t address what was actually found.', tier:'red' }
   ],
   i5: [
-    { name:'Seated thoracic extension with towel', desc:'Seated thoracic extension exercise performed using a rolled towel.', reveal:'Low-equipment, gentle home option well suited as a starting point.', tier:'green' },
+    { name:'Seated thoracic extension in chair with towel', desc:'Seated thoracic extension exercise performed using a rolled towel.', reveal:'A low-equipment, gentle option — reasonable, though this finding isn\u2019t a major priority this session.', tier:'yellow' },
     { name:'Thoracic extension over foam roller', desc:'Supine thoracic extension performed over a foam roller.', reveal:'Effective, but more setup than needed as a starting point.', tier:'yellow' },
     { name:'Quadruped thoracic rotation', desc:'Quadruped rotational mobility exercise targeting the thoracic spine.', reveal:'Reasonable, but a secondary priority relative to a straightforward extension exercise here.', tier:'yellow' },
-    { name:'High-velocity thoracic spine manipulation', desc:'High-velocity, low-amplitude manual thrust technique to the thoracic spine.', reveal:'Outside the scope of what this finding calls for at this stage.', tier:'red' }
-  ],
-  i6: [
-    { name:'Activity pacing and load management education', desc:'Patient education focused on activity pacing and graded load management.', reveal:'Directly addresses avoidance behavior without adding physical load.', tier:'green' },
-    { name:'Graded return-to-activity program', desc:'Structured, progressive return-to-activity program.', reveal:"Appropriate longer-term, but a bigger commitment than a single session's priority should carry.", tier:'yellow' },
-    { name:'Progressive resistance circuit, uninvolved-side-led', desc:'General progressive resistance circuit led by the uninvolved side.', reveal:'A reasonable but fairly indirect way to address this specific impairment.', tier:'yellow' },
-    { name:'Immediate full return to competitive tennis without graded progression', desc:'Immediate return to full competitive tennis participation.', reveal:'Skips the graded exposure this impairment is actually calling for.', tier:'red' }
+    { name:'High-velocity thoracic spine manipulation', desc:'High-velocity, low-amplitude manual thrust technique to the thoracic spine.', reveal:'A considerably more invasive technique than this finding calls for, given three simpler self-directed options would reasonably be tried first.', tier:'yellow' }
   ]
 };
 

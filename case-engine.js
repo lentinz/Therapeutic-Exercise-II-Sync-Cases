@@ -57,7 +57,7 @@ function renderResumePrompt() {
 
 const AUTHOR_CREDIT = "Case author: Zachary Lentini, PT, DPT";
 
-const STAGES = ["Welcome & Objectives","Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Exercise & Dosage","Case Summary"];
+const STAGES = ["Welcome & Objectives","Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Interventions & Dosage","Case Summary"];
 let current = 0;
 let maxVisited = 0;
 
@@ -424,7 +424,7 @@ function slotPlanSentence() {
     const need = plan[r - 1] || 0;
     parts.push(need === 0
       ? `priority #${r} is not addressed this session`
-      : `priority #${r} needs ${need} exercise${need > 1 ? 's' : ''}`);
+      : `priority #${r} needs ${need} intervention${need > 1 ? 's' : ''}`);
   }
   return parts.join(', ') + '.';
 }
@@ -433,7 +433,7 @@ function renderTreatment() {
   const priorities = state.topPriorities || [];
   return `
     <div class="eyebrow">TREATMENT — EXERCISE & DOSAGE</div>
-    <h1 class="stage-title">Select Exercises and Prescribe Dosage</h1>
+    <h1 class="stage-title">Select Interventions and Prescribe Dosage</h1>
     <p class="lede">${slotPlanSentence()} For each slot, pick a listed option or write in your own.</p>
     ${priorities.map((impId, rankIdx) => {
       const rank = rankIdx + 1;
@@ -450,7 +450,7 @@ function renderTreatment() {
       return `
         <div class="impairment-block">
           <h3>Priority #${rank} — ${imp.name}</h3>
-          <div class="priority-tag">Select ${need} exercise${need>1?'s':''} total — from the list, written in, or a mix (${slots.length} / ${need} filled)</div>
+          <div class="priority-tag">Select ${need} intervention${need>1?'s':''} total — from the list, written in, or a mix (${slots.length} / ${need} filled)</div>
           ${options.map((ex, idx) => `
             <div class="exercise-card ${menuChosenIdxs.includes(idx) ? 'selected' : ''}" onclick="toggleMenuExercise('${impId}', ${idx}, ${need})">
               <div><div class="exercise-name">${ex.name}</div><div class="exercise-detail">${ex.desc}</div></div>
@@ -464,7 +464,7 @@ function renderTreatment() {
               ${committedOther ? `<button class="btn small secondary" onclick="removeOtherExercise('${impId}')">Remove</button>` : `<button class="btn small secondary" onclick="cancelOtherExercise('${impId}')">Cancel</button>`}
             </div>
             ${!committedOther ? `<div class="slot-note">Not counted as a slot until you click Set.</div>` : ''}
-          ` : `<button class="btn small secondary" ${slots.length >= need ? 'disabled' : ''} onclick="addOtherExercise('${impId}')">+ Write in an exercise</button>`}
+          ` : `<button class="btn small secondary" ${slots.length >= need ? 'disabled' : ''} onclick="addOtherExercise('${impId}')">+ Write in an intervention</button>`}
         </div>
       `;
     }).join('')}
@@ -543,7 +543,7 @@ function renderDosageBlocks(priorities) {
 
       const typeSelector = isWriteIn ? `
         <div class="dosage-field">
-          <label>Exercise type</label>
+          <label>Intervention type</label>
           <select id="dosagetype_${key}" onchange="saveDosageField('${key}','dosageType',this.value); render();">
             <option value="resistance" ${(!isHold && !isMobilization) ? 'selected' : ''}>Resistance / strengthening</option>
             <option value="hold" ${isHold ? 'selected' : ''}>Stretch / hold-based</option>
@@ -649,6 +649,22 @@ function completeTreatment() {
   goTo(8);
 }
 
+function wasItemSelected(id) {
+  return state.subjPicked.includes(id) ||
+    state.screeningPicked.includes(id) ||
+    (state.differentialPicked || []).includes(id) ||
+    state.impairmentSearchPicked.includes(id);
+}
+
+function resolveTier(item) {
+  if (item.conditionalTier) {
+    const count = item.conditionalTier.dependsOn.filter(id => wasItemSelected(id)).length;
+    const tiers = item.conditionalTier.tiers;
+    return (tiers[count] !== undefined) ? tiers[count] : (tiers[Object.keys(tiers).length - 1] || 'yellow');
+  }
+  return item.tier;
+}
+
 function tierFeedbackBlock(label, picked, items) {
   return `
     <div class="panel">
@@ -656,7 +672,9 @@ function tierFeedbackBlock(label, picked, items) {
       ${picked.map(id => {
         const it = items.find(x => x.id === id);
         const label2 = it.name || it.q;
-        return `<div class="feedback-item">${TIER_DOT[it.tier]}<span>${label2} — <em>${TIER_LABEL[it.tier]}</em></span></div>`;
+        const resolvedTier = resolveTier(it);
+        const conditionNote = it.conditionalTier ? `<div style="font-size:12px; color:var(--ink-soft); margin-top:2px; margin-left:20px;">${it.conditionalTier.explanation}</div>` : '';
+        return `<div class="feedback-item">${TIER_DOT[resolvedTier]}<span>${label2} — <em>${TIER_LABEL[resolvedTier]}</em></span></div>${conditionNote}`;
       }).join('')}
     </div>
   `;
@@ -704,7 +722,7 @@ function renderSummary() {
     </div>
     <p class="lede">Tiers for your prioritized impairments are shown here for reference — we'll discuss the reasoning behind your ranking together in the debrief.</p>
 
-    <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Exercise Selection &amp; Dosage</h1>
+    <h1 class="stage-title" style="font-size:19px; margin-top:26px;">Intervention Selection &amp; Dosage</h1>
     <div class="panel">
       ${priorities.filter(id => (state.exerciseSlots[id]||[]).length > 0).map(impId => (state.exerciseSlots[impId]||[]).map((slot, slotIdx) => {
         const key = impId + '_' + slotIdx;
@@ -724,7 +742,7 @@ function renderSummary() {
           <div style="font-size:13.5px;">Dosage: ${doseText}</div>
           <div style="font-size:13.5px; margin-top:4px; color:var(--ink-soft);">${d.rationale||''}</div>
         </div>`;
-      }).join('')).join('') || '<div>No exercises selected.</div>'}
+      }).join('')).join('') || '<div>No interventions selected.</div>'}
       ${state.otherInterventions ? `<div style="margin-top:10px;"><strong>Other interventions:</strong> ${state.otherInterventions}</div>` : ''}
     </div>
     <p class="lede">This section is not scored against a tier system — it's the main focus of our large-group debrief.</p>
