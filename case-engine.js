@@ -756,7 +756,7 @@ function renderSummary() {
           ? `${d.sets||'—'} sets × ${d.holdtime||'—'} ${d.holdunit||'sec'} hold`
           : dosageType === 'mobilization'
           ? `${d.sets||'—'} sets × ${d.holdtime||'—'} ${d.holdunit||'sec'}, Grade ${d.mobgrade||'—'}`
-          : `${d.sets||'—'} sets × ${d.reps||'—'} reps, ${d.loadtype||'—'} ${d.loadval||''}`;
+          : `${d.sets||'—'} sets × ${d.reps||'—'} reps, ${d.loadtype||'Absolute'} ${d.loadval||''}`;
         return `<div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line);">
           <div style="font-weight:600;">${slotLabel(impId, slot)}</div>
           <div style="font-size:13px; color:var(--ink-soft); margin-bottom:6px;">For: ${IMPAIRMENTS[impId].name} — ${tierInfo}</div>
