@@ -93,7 +93,21 @@ Object.keys(EXERCISES).forEach(k => shuffleInPlace(EXERCISES[k]));
 
 
 function revealedImpairmentIds() {
-  return state.impairmentSearchPicked.map(id => IMPSEARCH.find(x => x.id === id).revealsImpairment);
+  // Any of the three objective categories can reveal an impairment, not just Body Structure & Function —
+  // most commonly it'll be the latter, but a sufficiently specific Screening or Differential item can too.
+  const sources = [
+    { picked: state.screeningPicked, items: (typeof SCREENING !== 'undefined' ? SCREENING : []) },
+    { picked: state.differentialPicked, items: (typeof DIFFERENTIAL !== 'undefined' ? DIFFERENTIAL : []) },
+    { picked: state.impairmentSearchPicked, items: (typeof IMPSEARCH !== 'undefined' ? IMPSEARCH : []) }
+  ];
+  const raw = [];
+  sources.forEach(src => {
+    (src.picked || []).forEach(id => {
+      const item = src.items.find(x => x.id === id);
+      if (item && item.revealsImpairment) raw.push(item.revealsImpairment);
+    });
+  });
+  return [...new Set(raw)]; // dedupe — multiple items (even across categories) can reveal the same impairment
 }
 
 function renderSidebar() {
@@ -525,18 +539,39 @@ function renderDosageBlocks(priorities) {
       const isWriteIn = slot.type === 'other';
       const dosageType = getSlotDosageType(impId, slot, key);
       const isHold = dosageType === 'hold';
+      const isMobilization = dosageType === 'mobilization';
 
       const typeSelector = isWriteIn ? `
         <div class="dosage-field">
           <label>Exercise type</label>
           <select id="dosagetype_${key}" onchange="saveDosageField('${key}','dosageType',this.value); render();">
-            <option value="resistance" ${!isHold ? 'selected' : ''}>Resistance / strengthening</option>
+            <option value="resistance" ${(!isHold && !isMobilization) ? 'selected' : ''}>Resistance / strengthening</option>
             <option value="hold" ${isHold ? 'selected' : ''}>Stretch / hold-based</option>
+            <option value="mobilization" ${isMobilization ? 'selected' : ''}>Manual therapy / mobilization</option>
           </select>
         </div>
       ` : '';
 
-      const doseFields = isHold ? `
+      const doseFields = isMobilization ? `
+        <div class="dosage-field"><label>Sets</label><input type="number" id="sets_${key}" min="1" value="${d.sets||''}" style="width:70px;" oninput="saveDosageField('${key}','sets',this.value)"></div>
+        <div class="dosage-field"><label>Application Time</label><input type="number" id="holdtime_${key}" min="1" value="${d.holdtime||''}" style="width:70px;" oninput="saveDosageField('${key}','holdtime',this.value)"></div>
+        <div class="dosage-field"><label>Unit</label>
+          <select id="holdunit_${key}" onchange="saveDosageField('${key}','holdunit',this.value)">
+            <option ${(d.holdunit==='sec'||!d.holdunit)?'selected':''}>sec</option>
+            <option ${d.holdunit==='min'?'selected':''}>min</option>
+          </select>
+        </div>
+        <div class="dosage-field"><label>Grade</label>
+          <select id="mobgrade_${key}" onchange="saveDosageField('${key}','mobgrade',this.value)">
+            <option value="" ${!d.mobgrade?'selected':''}>—</option>
+            <option ${d.mobgrade==='I'?'selected':''}>I</option>
+            <option ${d.mobgrade==='II'?'selected':''}>II</option>
+            <option ${d.mobgrade==='III'?'selected':''}>III</option>
+            <option ${d.mobgrade==='IV'?'selected':''}>IV</option>
+            <option ${d.mobgrade==='V'?'selected':''}>V</option>
+          </select>
+        </div>
+      ` : isHold ? `
         <div class="dosage-field"><label>Sets</label><input type="number" id="sets_${key}" min="1" value="${d.sets||''}" style="width:70px;" oninput="saveDosageField('${key}','sets',this.value)"></div>
         <div class="dosage-field"><label>Hold Time</label><input type="number" id="holdtime_${key}" min="1" value="${d.holdtime||''}" style="width:70px;" oninput="saveDosageField('${key}','holdtime',this.value)"></div>
         <div class="dosage-field"><label>Unit</label>
@@ -598,6 +633,8 @@ function allSlotsFilledAndDosed(priorities) {
       const dosageType = getSlotDosageType(impId, slots[i], key);
       if (dosageType === 'hold') {
         if (!d.holdtime) return false;
+      } else if (dosageType === 'mobilization') {
+        if (!d.holdtime || !d.mobgrade) return false;
       } else {
         if (!d.reps || !d.loadval) return false;
       }
@@ -677,6 +714,8 @@ function renderSummary() {
         const dosageType = getSlotDosageType(impId, slot, key);
         const doseText = dosageType === 'hold'
           ? `${d.sets||'—'} sets × ${d.holdtime||'—'} ${d.holdunit||'sec'} hold`
+          : dosageType === 'mobilization'
+          ? `${d.sets||'—'} sets × ${d.holdtime||'—'} ${d.holdunit||'sec'}, Grade ${d.mobgrade||'—'}`
           : `${d.sets||'—'} sets × ${d.reps||'—'} reps, ${d.loadtype||'—'} ${d.loadval||''}`;
         return `<div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line);">
           <div style="font-weight:600;">${slotLabel(impId, slot)}</div>
