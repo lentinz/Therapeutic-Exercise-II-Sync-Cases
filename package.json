@@ -1,0 +1,12 @@
+{
+  "name": "therapeutic-exercise-ii-sync-cases",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build tooling for encrypting SIG interactive case files before they're served on GitHub Pages.",
+  "scripts": {
+    "build": "node build/encrypt.js"
+  },
+  "devDependencies": {
+    "staticrypt": "^3.5.4"
+  }
+}

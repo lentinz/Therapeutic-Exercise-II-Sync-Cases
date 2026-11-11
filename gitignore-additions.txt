@@ -1,0 +1,12 @@
+# Add these lines to the repo's existing .gitignore (create one if it doesn't exist yet):
+
+# Plaintext case sources — never committed; only the StatiCrypt-encrypted
+# output (built from these via `npm run build`) is committed and served.
+/src/
+
+# Local Node install
+/node_modules/
+
+# In case you ever use a local .env for STATICRYPT_PASSWORD instead of
+# exporting it in your shell — never commit this either way.
+.env
