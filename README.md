@@ -9,7 +9,7 @@ Case Activities for Synchronous Sessions — Therapeutic Exercise II Course
 
 ### Module 2
 - **Case 2A:** _Coming soon_
-- **Case 2B:** _Coming soon_
+- **Case 2B: Spinning Out** — https://lentinz.github.io/Therapeutic-Exercise-II-Sync-Cases/Case%202B_Spinning%20Out.html
 
 ### Module 3
 - **Case 3A:** _Coming soon_
