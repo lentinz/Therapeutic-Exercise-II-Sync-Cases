@@ -702,6 +702,36 @@ function tierFeedbackBlock(label, picked, items) {
   `;
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderTakeawaysBlock() {
+  if (typeof CASE_TAKEAWAYS === 'undefined' || !CASE_TAKEAWAYS || CASE_TAKEAWAYS.length === 0) return '';
+  const title = (typeof CASE_TAKEAWAYS_TITLE !== 'undefined' && CASE_TAKEAWAYS_TITLE) ? CASE_TAKEAWAYS_TITLE : 'Key Takeaways';
+  const items = CASE_TAKEAWAYS.map(t => {
+    if (t && typeof t === 'object') {
+      const heading = t.heading ? `<strong>${escapeHtml(t.heading)}:</strong> ` : '';
+      const body = t.body ? escapeHtml(t.body) : '';
+      return `<li>${heading}${body}</li>`;
+    }
+    return `<li>${escapeHtml(t)}</li>`;
+  }).join('');
+  return `
+    <div class="panel takeaways-panel">
+      <h3 style="margin-top:0;">${escapeHtml(title)}</h3>
+      <ol style="padding-left:20px; margin:0;">
+        ${items}
+      </ol>
+    </div>
+  `;
+}
+
 function renderSummary() {
   const priorities = state.topPriorities || [];
   const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -725,6 +755,8 @@ function renderSummary() {
       <div class="cert-field-label">Edit group members (updates the record above)</div>
       <input type="text" id="groupNameInputSummary" value="${state.groupName}" placeholder="Enter group member names" oninput="state.groupName = this.value; document.getElementById('certGroupNameLive').textContent = this.value || '\u2014'; saveProgress();">
     </div>
+
+    ${renderTakeawaysBlock()}
 
     <h1 class="stage-title" style="font-size:19px;">Subjective &amp; Objective — Choice Quality</h1>
     <p class="lede">Each item you selected is now revealed as green (strong), yellow (acceptable, not optimal), or red (not well advised).</p>
@@ -767,7 +799,7 @@ function renderSummary() {
       }).join('')).join('') || '<div>No interventions selected.</div>'}
       ${state.otherInterventions ? `<div style="margin-top:10px;"><strong>Other interventions:</strong> ${state.otherInterventions}</div>` : ''}
     </div>
-    <p class="lede">Tiers are shown for each intervention above for your reference — this section is the main focus of our large-group debrief.</p>
+    <p class="lede">This section is not scored against a tier system — it's the main focus of our large-group debrief.</p>
 
     <div id="printBar">
       <button class="btn" onclick="clearSavedProgress(); window.print();">Download / Print Certificate</button>

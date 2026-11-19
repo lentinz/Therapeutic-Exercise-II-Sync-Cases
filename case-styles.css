@@ -121,3 +121,5 @@
   .cert-header .cert-meta-label { font-size: 11px; color: #B8C4D6; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
   .cert-header .cert-meta-value { font-size: 15px; font-weight: 600; }
   #certGroupNameLive { border-bottom: 1px dashed rgba(255,255,255,0.5); padding-bottom: 2px; }
+  .panel.takeaways-panel { background: var(--teal-dim); border-color: var(--teal); border-left: 4px solid var(--teal); }
+  .takeaways-panel h3 { color: var(--teal); }
