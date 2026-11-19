@@ -393,7 +393,7 @@ function renderImpairments() {
   return `
     <div class="eyebrow">IMPAIRMENT PRIORITY</div>
     <h1 class="stage-title">Rank the Impairments You Found</h1>
-    <p class="lede">Only impairments you revealed during the objective exam appear here. Drag to reorder — the top ${maxRank} will carry forward to treatment.</p>
+    <p class="lede">Only impairments you revealed during the objective exam appear here. Drag to reorder — the top ${maxRank} will carry forward to treatment, and this order is locked once you continue: ${slotPlanSentence(maxRank)}</p>
     <ul class="imp-drag-list" id="impDragList">
       ${state.impairmentOrder.map((id, idx) => {
         const imp = IMPAIRMENTS[id];
@@ -438,9 +438,9 @@ function slotsNeeded(rank) {
   return plan[rank - 1] || 0;
 }
 
-function slotPlanSentence() {
+function slotPlanSentence(limitOverride) {
   const plan = (typeof SLOT_PLAN !== 'undefined') ? SLOT_PLAN : [2, 1];
-  const limit = (typeof RANK_LIMIT !== 'undefined') ? RANK_LIMIT : 3;
+  const limit = limitOverride || ((typeof RANK_LIMIT !== 'undefined') ? RANK_LIMIT : 3);
   const parts = [];
   for (let r = 1; r <= limit; r++) {
     const need = plan[r - 1] || 0;
@@ -456,7 +456,7 @@ function renderTreatment() {
   return `
     <div class="eyebrow">TREATMENT — EXERCISE & DOSAGE</div>
     <h1 class="stage-title">Select Interventions and Prescribe Dosage</h1>
-    <p class="lede">${slotPlanSentence()} For each slot, pick a listed option or write in your own.</p>
+    <p class="lede">${slotPlanSentence(priorities.length)} For each slot, pick a listed option or write in your own.</p>
     ${priorities.map((impId, rankIdx) => {
       const rank = rankIdx + 1;
       const imp = IMPAIRMENTS[impId];
@@ -562,19 +562,24 @@ function renderDosageBlocks(priorities) {
       const dosageType = getSlotDosageType(impId, slot, key);
       const isHold = dosageType === 'hold';
       const isMobilization = dosageType === 'mobilization';
+      const isActivity = dosageType === 'activity';
+      const isResistance = !isHold && !isMobilization && !isActivity;
 
       const typeSelector = isWriteIn ? `
         <div class="dosage-field">
           <label>Intervention type</label>
           <select id="dosagetype_${key}" onchange="saveDosageField('${key}','dosageType',this.value); render();">
-            <option value="resistance" ${(!isHold && !isMobilization) ? 'selected' : ''}>Resistance / strengthening</option>
+            <option value="resistance" ${isResistance ? 'selected' : ''}>Resistance / strengthening</option>
             <option value="hold" ${isHold ? 'selected' : ''}>Stretch / hold-based</option>
             <option value="mobilization" ${isMobilization ? 'selected' : ''}>Manual therapy / mobilization</option>
+            <option value="activity" ${isActivity ? 'selected' : ''}>Functional / activity-based (gait, transfers, education — no structured dose)</option>
           </select>
         </div>
       ` : '';
 
-      const doseFields = isMobilization ? `
+      const doseFields = isActivity ? `
+        <div class="dosage-field" style="flex:1 1 100%;"><label>Session details</label><input type="text" id="details_${key}" placeholder="e.g. 10 min NWB crutch gait, level surface, standby assist, verbal cueing" value="${d.details||''}" style="width:100%;" oninput="saveDosageField('${key}','details',this.value)"></div>
+      ` : isMobilization ? `
         <div class="dosage-field"><label>Sets</label><input type="number" id="sets_${key}" min="1" value="${d.sets||''}" style="width:70px;" oninput="saveDosageField('${key}','sets',this.value)"></div>
         <div class="dosage-field"><label>Application Time</label><input type="number" id="holdtime_${key}" min="1" value="${d.holdtime||''}" style="width:70px;" oninput="saveDosageField('${key}','holdtime',this.value)"></div>
         <div class="dosage-field"><label>Unit</label>
@@ -651,14 +656,16 @@ function allSlotsFilledAndDosed(priorities) {
     for (let i = 0; i < slots.length; i++) {
       const key = impId + '_' + i;
       const d = state.dosage[key];
-      if (!d || !d.rationale || !d.sets) return false;
+      if (!d || !d.rationale) return false;
       const dosageType = getSlotDosageType(impId, slots[i], key);
-      if (dosageType === 'hold') {
-        if (!d.holdtime) return false;
+      if (dosageType === 'activity') {
+        if (!d.details) return false;
+      } else if (dosageType === 'hold') {
+        if (!d.sets || !d.holdtime) return false;
       } else if (dosageType === 'mobilization') {
-        if (!d.holdtime || !d.mobgrade) return false;
+        if (!d.sets || !d.holdtime || !d.mobgrade) return false;
       } else {
-        if (!d.reps || !d.loadval) return false;
+        if (!d.sets || !d.reps || !d.loadval) return false;
       }
     }
   }
@@ -784,7 +791,9 @@ function renderSummary() {
         const tierInfo = slot.type === 'menu' ? `${TIER_DOT[EXERCISES[impId][slot.idx].tier]} <em>${TIER_LABEL[EXERCISES[impId][slot.idx].tier]}</em>` : '<em>Custom write-in — discuss in debrief</em>';
         const revealText = slot.type === 'menu' ? EXERCISES[impId][slot.idx].reveal : '';
         const dosageType = getSlotDosageType(impId, slot, key);
-        const doseText = dosageType === 'hold'
+        const doseText = dosageType === 'activity'
+          ? `${d.details||'—'}`
+          : dosageType === 'hold'
           ? `${d.sets||'—'} sets × ${d.holdtime||'—'} ${d.holdunit||'sec'} hold`
           : dosageType === 'mobilization'
           ? `${d.sets||'—'} sets × ${d.holdtime||'—'} ${d.holdunit||'sec'}, Grade ${d.mobgrade||'—'}`
