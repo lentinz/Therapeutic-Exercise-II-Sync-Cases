@@ -56,6 +56,9 @@ function renderResumePrompt() {
 }
 
 const AUTHOR_CREDIT = "Case author: Zachary Lentini, PT, DPT";
+// Optional per-case guest-contributor credit. When a case shell defines GUEST_CREDIT as a non-empty
+// string, it's shown stacked above the author credit in the same fixed-position box. When it's left
+// undefined or empty, nothing changes (Cases 1 and 5B are unaffected).
 
 const STAGES = ["Welcome & Objectives","Case Intro","Subjective: Reflect","Subjective: Interview","Objective: Reflect","Objective: Examine","Impairment Priority","Treatment: Interventions & Dosage","Case Summary"];
 let current = 0;
@@ -855,10 +858,24 @@ function updateCaseRefVisibility() {
   appEl.classList.toggle('has-case-ref', showCaseRef);
 }
 
+function renderCredit() {
+  const creditEl = document.querySelector('.author-credit');
+  if (!creditEl) return;
+  creditEl.textContent = '';
+  if (typeof GUEST_CREDIT !== 'undefined' && GUEST_CREDIT) {
+    const guestLine = document.createElement('div');
+    guestLine.textContent = GUEST_CREDIT;
+    creditEl.appendChild(guestLine);
+  }
+  const authorLine = document.createElement('div');
+  authorLine.textContent = AUTHOR_CREDIT;
+  creditEl.appendChild(authorLine);
+}
+
 function initShell() {
   document.getElementById('sidebarTitle').textContent = COURSE_TITLE;
   document.getElementById('sidebarCaseTitle').innerHTML = CASE_NUMBER + '<br>' + CASE_TITLE;
-  document.querySelector('.author-credit').textContent = AUTHOR_CREDIT;
+  renderCredit();
   document.title = CASE_NUMBER + ': ' + CASE_TITLE;
   ensureCaseRefSidebar();
 }
